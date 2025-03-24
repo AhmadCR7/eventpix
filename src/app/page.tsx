@@ -1,103 +1,159 @@
+import React from "react";
+import Link from "next/link";
 import Image from "next/image";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="flex flex-col items-center">
+      {/* Hero Section */}
+      <div className="w-full max-w-7xl flex flex-col md:flex-row items-center justify-between py-16 px-4">
+        {/* Left side - Text content */}
+        <div className="md:w-1/2 mb-10 md:mb-0 md:pr-10">
+          <h1 className="text-4xl md:text-5xl font-['Playfair_Display'] font-bold text-gray-800 mb-6 leading-tight">
+            It's all done for you.
+          </h1>
+          <p className="text-lg md:text-xl text-gray-700 mb-8 leading-relaxed">
+            We instantly create a private QR code for your event that saves 
+            all full resolution photos to your live photo gallery or albums.
+          </p>
+          <p className="text-2xl font-['Playfair_Display'] font-medium text-gray-800 mb-10">
+            No App. No Fuss.
+          </p>
+          
+          <div className="text-rose-400 font-medium tracking-wider mb-12">
+            USE IT FOR PHOTOS + VIDEOS + GUESTBOOK + SLIDESHOW
+          </div>
+          
+          <div className="flex space-x-4">
+            <Link 
+              href="/events/create" 
+              className="bg-rose-600 text-white px-8 py-3 rounded-full hover:bg-rose-700 transition-colors shadow-sm hover:shadow-md font-medium"
+            >
+              Get Started
+            </Link>
+            
+            <Link 
+              href="/events" 
+              className="bg-white text-rose-700 border border-rose-200 px-8 py-3 rounded-full hover:bg-rose-50 transition-colors shadow-sm hover:shadow-md font-medium"
+            >
+              View Events
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        
+        {/* Right side - Image */}
+        <div className="md:w-1/2 relative">
+          <div className="relative h-80 w-full md:h-[450px] rounded-lg overflow-hidden">
+            <Image 
+              src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1469&auto=format&fit=crop" 
+              alt="Wedding celebration" 
+              fill
+              className="object-cover rounded-lg"
+              priority
+            />
+          </div>
+        </div>
+      </div>
+      
+      {/* Event Types Section */}
+      <div className="w-full bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4">
+          <h2 className="text-center text-rose-400 font-medium tracking-wider mb-8">
+            LOVED & USED FOR
+          </h2>
+          
+          <div className="flex flex-wrap justify-center gap-8 mt-8">
+            <div className="w-full md:w-64 text-center">
+              <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                <Image 
+                  src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1632&auto=format&fit=crop" 
+                  alt="Corporate & Business Events" 
+                  width={240}
+                  height={180}
+                  className="object-cover"
+                />
+              </div>
+              <h3 className="font-['Playfair_Display'] font-medium text-gray-800">
+                CORPORATE & BUSINESS EVENTS
+              </h3>
+            </div>
+            
+            <div className="w-full md:w-64 text-center">
+              <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                <Image 
+                  src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=1470&auto=format&fit=crop" 
+                  alt="Birthdays" 
+                  width={240}
+                  height={180}
+                  className="object-cover"
+                />
+              </div>
+              <h3 className="font-['Playfair_Display'] font-medium text-gray-800">
+                BIRTHDAYS
+              </h3>
+            </div>
+            
+            <div className="w-full md:w-64 text-center">
+              <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+                <Image 
+                  src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1470&auto=format&fit=crop" 
+                  alt="Engagement Parties" 
+                  width={240}
+                  height={180}
+                  className="object-cover"
+                />
+              </div>
+              <h3 className="font-['Playfair_Display'] font-medium text-gray-800">
+                ENGAGEMENT PARTIES
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* How It Works Section */}
+      <div className="w-full py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-3xl font-['Playfair_Display'] font-bold text-center mb-12 text-gray-800">
+            How It Works
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-rose-100 text-center">
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 text-2xl font-bold mx-auto mb-4">
+                1
+              </div>
+              <h3 className="text-xl font-medium mb-3 text-gray-800">Create Your Event</h3>
+              <p className="text-gray-600">Set up your event details and get a unique QR code for your guests.</p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-rose-100 text-center">
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 text-2xl font-bold mx-auto mb-4">
+                2
+              </div>
+              <h3 className="text-xl font-medium mb-3 text-gray-800">Share With Guests</h3>
+              <p className="text-gray-600">Display your QR code at your event for guests to scan and upload photos.</p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-rose-100 text-center">
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 text-2xl font-bold mx-auto mb-4">
+                3
+              </div>
+              <h3 className="text-xl font-medium mb-3 text-gray-800">Enjoy Your Photos</h3>
+              <p className="text-gray-600">Access all your photos in one place, download, and share with everyone.</p>
+            </div>
+          </div>
+          
+          <div className="text-center mt-12">
+            <Link 
+              href="/events/create" 
+              className="bg-rose-600 text-white px-8 py-3 rounded-full hover:bg-rose-700 transition-colors shadow-sm hover:shadow-md font-medium"
+            >
+              Create Your First Event
+            </Link>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
