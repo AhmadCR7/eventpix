@@ -29,12 +29,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Add middleware configuration
+  // Simplified middleware configuration
   experimental: {
-    middleware: {
-      // Use Node.js runtime for middleware instead of Edge
-      runtime: "nodejs"
-    }
+    serverComponentsExternalPackages: ["bcrypt", "bcryptjs"],
   },
 }
 
