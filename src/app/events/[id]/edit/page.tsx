@@ -6,10 +6,10 @@ import Link from 'next/link';
 import { getEventById, updateEvent } from '../../../lib/events';
 import Alert from '../../../components/Alert';
 
-export default function EditEventPage() {
+export default function EditEventPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const params = useParams();
-  const eventId = params.id as string;
+  const { id } = params;
+  const eventId = id;
   
   const [eventData, setEventData] = useState({
     name: '',
@@ -20,23 +20,35 @@ export default function EditEventPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   // Load event data on component mount
   useEffect(() => {
-    const event = getEventById(eventId);
-    
-    if (event) {
-      // Format date for input field (YYYY-MM-DD)
-      const formattedDate = new Date(event.date).toISOString().split('T')[0];
-      
-      setEventData({
-        name: event.name,
-        date: formattedDate,
-        welcomeMessage: event.welcomeMessage || ''
-      });
-    } else {
-      setError('Event not found');
+    async function loadEvent() {
+      try {
+        const event = await getEventById(eventId);
+        
+        if (event) {
+          // Format date for input field (YYYY-MM-DD)
+          const formattedDate = new Date(event.date).toISOString().split('T')[0];
+          
+          setEventData({
+            name: event.name,
+            date: formattedDate,
+            welcomeMessage: event.welcomeMessage || ''
+          });
+        } else {
+          setError('Event not found');
+        }
+      } catch (err) {
+        console.error('Error loading event:', err);
+        setError('Failed to load event details');
+      } finally {
+        setIsLoading(false);
+      }
     }
+    
+    loadEvent();
   }, [eventId]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -47,7 +59,7 @@ export default function EditEventPage() {
     }));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
@@ -68,28 +80,40 @@ export default function EditEventPage() {
       }
       
       // Update the event
-      const success = updateEvent(eventId, {
-        name: eventData.name,
-        date: eventData.date,
-        welcomeMessage: eventData.welcomeMessage
+      await updateEvent(eventId, {
+        name: eventData.name.trim(),
+        date: new Date(eventData.date).toISOString(),
+        welcomeMessage: eventData.welcomeMessage.trim()
       });
       
-      if (success) {
-        setSuccess('Event updated successfully!');
-        // Navigate back to event details after a brief delay
-        setTimeout(() => {
-          router.push(`/events/${eventId}`);
-        }, 1500);
-      } else {
-        setError('Failed to update event');
-      }
+      setSuccess('Event updated successfully!');
+      // Navigate back to event details after a brief delay
+      setTimeout(() => {
+        router.push(`/events/${eventId}`);
+        router.refresh();
+      }, 1500);
     } catch (error) {
       console.error('Error updating event:', error);
-      setError('An unexpected error occurred');
+      setError('Failed to update event. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-sm border border-rose-100 p-8 text-center">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-6"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-8"></div>
+            <div className="h-40 bg-gray-200 rounded mb-4"></div>
+          </div>
+          <p className="text-gray-500">Loading event details...</p>
+        </div>
+      </div>
+    );
+  }
   
   if (error === 'Event not found') {
     return (

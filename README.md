@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GuestPix
+
+## Digital Photo Gallery and Guestbook for Events
+
+GuestPix is a modern web application that allows event hosts to create digital photo galleries and guestbooks for their events. Guests can upload photos and leave messages without needing to create an account or install an app.
+
+![GuestPix Logo](public/logo.png)
+
+## Features
+
+- 🔐 **User Authentication** - Secure login/signup for event hosts
+- 👑 **Admin Dashboard** - Special access for administrators to manage all events
+- 📱 **No App Required** - Guests upload photos via QR code or link
+- 📸 **Photo Gallery** - Beautiful display of event photos
+- ✏️ **Digital Guestbook** - Leave messages for the event host
+- 🔒 **Private Events** - Secure events with a PIN
+- 🖼️ **Event Management** - Create, edit, and delete events
+- 🌐 **Responsive Design** - Works on all devices
+
+## Tech Stack
+
+- **Frontend**: Next.js, React, TailwindCSS
+- **Backend**: NextAuth.js, Prisma, SQLite
+- **Storage**: Cloudinary
+- **Deployment**: Vercel (recommended)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Node.js 18+
+- npm or yarn
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/guestpix-app.git
+   cd guestpix-app
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Learn More
+3. Set up environment variables:
+   Create a `.env.local` file with the following variables:
+   ```
+   # Database
+   DATABASE_URL="file:./dev.db"
+   
+   # NextAuth
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=your-secret-key
+   
+   # Cloudinary (for image storage)
+   CLOUDINARY_CLOUD_NAME=your-cloud-name
+   CLOUDINARY_API_KEY=your-api-key
+   CLOUDINARY_API_SECRET=your-api-secret
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. Initialize the database:
+   ```bash
+   npx prisma db push
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. Create admin user:
+   ```bash
+   node scripts/create-admin.js
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+6. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-## Deploy on Vercel
+7. Access the application at http://localhost:3000
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Admin Access
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Default admin credentials:
+- Email: admin@guestpix.com
+- Password: Admin@123456
+
+## Deployment
+
+The app is optimized for deployment on Vercel:
+
+1. Fork this repository
+2. Connect to Vercel
+3. Set up environment variables
+4. Deploy!
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Version History
+
+- 1.0.0 - Initial release with core functionality

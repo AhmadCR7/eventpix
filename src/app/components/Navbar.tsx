@@ -3,11 +3,14 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 
 const Navbar: React.FC = () => {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const [eventsDropdownOpen, setEventsDropdownOpen] = useState(false);
   const [pricingDropdownOpen, setPricingDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const isActive = (path: string): boolean => {
@@ -126,24 +129,67 @@ const Navbar: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* User Account */}
-          <Link 
-            href="/account"
-            className="text-white hover:text-rose-200 transition-colors"
-            aria-label="User Account"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </Link>
-          
-          {/* Get Started Button */}
-          <Link 
-            href="/events/create" 
-            className="bg-white text-rose-600 px-6 py-2 rounded-full hover:bg-gray-100 transition-colors text-sm font-medium hidden md:block"
-          >
-            Get Started
-          </Link>
+          {/* Auth Buttons */}
+          {status === 'authenticated' ? (
+            <div className="relative">
+              <button 
+                className="text-white hover:text-rose-200 transition-colors flex items-center"
+                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                onBlur={() => setTimeout(() => setUserDropdownOpen(false), 200)}
+                aria-label="User Account"
+              >
+                <span className="mr-2 hidden sm:inline">{session?.user?.name}</span>
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
+              
+              {userDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                  <div className="py-2">
+                    <Link 
+                      href="/dashboard" 
+                      className="block px-4 py-2 text-gray-800 hover:bg-rose-50 hover:text-rose-600"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link 
+                      href="/profile" 
+                      className="block px-4 py-2 text-gray-800 hover:bg-rose-50 hover:text-rose-600"
+                      onClick={() => setUserDropdownOpen(false)}
+                    >
+                      Profile Settings
+                    </Link>
+                    <button 
+                      onClick={() => {
+                        signOut({ callbackUrl: '/' });
+                        setUserDropdownOpen(false);
+                      }}
+                      className="w-full text-left block px-4 py-2 text-gray-800 hover:bg-rose-50 hover:text-rose-600"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <Link 
+                href="/auth/signin" 
+                className="text-white hover:text-rose-200 transition-colors hidden sm:inline-block"
+              >
+                Sign In
+              </Link>
+              <Link 
+                href="/auth/signup" 
+                className="bg-white text-rose-600 px-6 py-2 rounded-full hover:bg-gray-100 transition-colors text-sm font-medium hidden md:block"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
           
           {/* Mobile menu button */}
           <button 
@@ -197,15 +243,43 @@ const Navbar: React.FC = () => {
             >
               Help Center
             </Link>
-            <div className="pt-2">
-              <Link 
-                href="/events/create" 
-                className="inline-block bg-rose-600 text-white px-6 py-2 rounded-full hover:bg-rose-700 transition-colors text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Get Started
-              </Link>
-            </div>
+            {status === 'authenticated' ? (
+              <>
+                <Link 
+                  href="/dashboard"
+                  className="text-white hover:text-rose-200 py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => {
+                    signOut({ callbackUrl: '/' });
+                    setMobileMenuOpen(false);
+                  }}
+                  className="text-white hover:text-rose-200 py-2 text-left"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <div className="pt-2 flex space-x-4">
+                <Link 
+                  href="/auth/signin" 
+                  className="inline-block bg-transparent border border-rose-600 text-white px-6 py-2 rounded-full hover:bg-rose-700 transition-colors text-sm font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Link 
+                  href="/auth/signup" 
+                  className="inline-block bg-rose-600 text-white px-6 py-2 rounded-full hover:bg-rose-700 transition-colors text-sm font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
