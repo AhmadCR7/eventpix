@@ -77,17 +77,29 @@ model Event {
   userId          String?   // Relation to the host user
   user            User?     @relation("UserEvents", fields: [userId], references: [id])
   photos          Photo[]
+  guestbookMessages GuestbookMessage[]
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
 
 // Photo model
 model Photo {
+  id           String   @id @default(uuid())
+  url          String
+  publicId     String?  // For cloud storage reference (e.g., Cloudinary)
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  uploaderName String?  // Optional name of the guest who uploaded
+  createdAt    DateTime @default(now())
+}
+
+// Guestbook message model
+model GuestbookMessage {
   id        String   @id @default(uuid())
-  url       String
-  publicId  String?  // For cloud storage reference (e.g., Cloudinary)
   eventId   String
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  uploaderName String? // Optional name of the guest who uploaded
+  name      String?
+  message   String
+  approved  Boolean  @default(true)
   createdAt DateTime @default(now())
 } 
