@@ -17,6 +17,9 @@ function SignInContent() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Get the callbackUrl from the URL if it exists
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+
   // Check for success message in URL
   useEffect(() => {
     const successMsg = searchParams.get('success');
@@ -50,13 +53,21 @@ function SignInContent() {
       
       if (result?.error) {
         setError('Invalid email or password');
+        setLoading(false);
       } else {
-        // Redirect to dashboard on successful login
-        router.push('/dashboard');
+        // Successfully signed in, redirect to the callback URL or dashboard
+        console.log("Login successful, redirecting to:", callbackUrl);
+        
+        // Use router.refresh() to update the session state before redirecting
+        router.refresh();
+        
+        // Slight delay to ensure the session is updated
+        setTimeout(() => {
+          router.push(callbackUrl);
+        }, 100);
       }
     } catch (error) {
       setError('An error occurred during sign-in');
-    } finally {
       setLoading(false);
     }
   };
