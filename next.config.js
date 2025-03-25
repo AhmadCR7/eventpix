@@ -29,6 +29,13 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Add middleware configuration
+  experimental: {
+    middleware: {
+      // Use Node.js runtime for middleware instead of Edge
+      runtime: "nodejs"
+    }
+  },
 }
 
 module.exports = nextConfig 
