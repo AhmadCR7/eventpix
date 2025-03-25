@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth } from './app/api/auth/[...nextauth]/route';
 
+// Middleware function - now Edge compatible
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
@@ -14,9 +14,6 @@ export async function middleware(request: NextRequest) {
 
   console.log(`Processing route: ${pathname}`);
 
-  // Get the session
-  const session = await auth();
-  
   // Check if the path is a protected route that requires authentication
   const isProtectedRoute = 
     pathname.startsWith('/dashboard') || 
@@ -34,10 +31,15 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/auth/') ||
     pathname === '/how-it-works' ||
     isGuestAccessRoute;
-    
+  
+  // Check for authentication by looking for the session token cookie
+  // This is Edge-compatible and doesn't require importing auth()
+  const hasSessionToken = request.cookies.has('next-auth.session-token') || 
+                          request.cookies.has('__Secure-next-auth.session-token');
+  
   // Handle auth requirements
-  if (isProtectedRoute && !session) {
-    // If no session, redirect to login for protected routes
+  if (isProtectedRoute && !hasSessionToken) {
+    // If no session token, redirect to login for protected routes
     const callbackUrl = encodeURIComponent(pathname);
     return NextResponse.redirect(new URL(`/auth/signin?callbackUrl=${callbackUrl}`, request.url));
   }
