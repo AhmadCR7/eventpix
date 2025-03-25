@@ -3,7 +3,8 @@ import type { NextRequest } from 'next/server';
 
 // Middleware function - now Edge compatible
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const url = request.nextUrl;
+  const { pathname } = url;
   
   // Skip middleware for api routes, static files and resources
   if (
@@ -14,13 +15,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if the path is a protected route
-  const isProtectedRoute = 
-    pathname.startsWith('/dashboard') || 
-    pathname.startsWith('/profile') || 
-    pathname.startsWith('/events');
-  
-  // Public routes and guest routes don't need middleware processing
+  // Public routes don't need auth checks
   if (
     pathname === '/' ||
     pathname.startsWith('/auth/') || 
@@ -30,18 +25,28 @@ export function middleware(request: NextRequest) {
   ) {
     return NextResponse.next();
   }
+
+  // Protected routes
+  const isProtectedRoute = 
+    pathname.startsWith('/dashboard') || 
+    pathname.startsWith('/profile') || 
+    pathname.startsWith('/events');
   
-  // Simple cookie check - avoid using async/await
+  if (!isProtectedRoute) {
+    return NextResponse.next();
+  }
+  
+  // Simple cookie check for auth
   const hasSessionToken = 
     request.cookies.get('next-auth.session-token') || 
     request.cookies.get('__Secure-next-auth.session-token');
   
-  // Redirect if accessing protected route without auth
-  if (isProtectedRoute && !hasSessionToken) {
-    const callbackUrl = encodeURIComponent(pathname);
-    return NextResponse.redirect(
-      new URL(`/auth/signin?callbackUrl=${callbackUrl}`, request.url)
-    );
+  // If no auth and trying to access protected route, redirect to login
+  if (!hasSessionToken) {
+    // Create the signin URL without using the URL constructor
+    const redirectUrl = new URL('/auth/signin', url.origin);
+    redirectUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(redirectUrl);
   }
   
   return NextResponse.next();
