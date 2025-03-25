@@ -18,11 +18,11 @@ function SignInContent() {
   const [loading, setLoading] = useState(false);
 
   // Get the callbackUrl from the URL if it exists
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
 
   // Check for success message in URL
   useEffect(() => {
-    const successMsg = searchParams.get('success');
+    const successMsg = searchParams?.get('success');
     if (successMsg) {
       setSuccess(successMsg);
     }
@@ -45,33 +45,28 @@ function SignInContent() {
     setError('');
     
     try {
-      // Use the built-in redirect capability of signIn
-      // First attempt with redirect: true
-      console.log(`Signing in with redirect to: ${callbackUrl}`);
-      
       const result = await signIn('credentials', {
-        redirect: true,
-        callbackUrl: callbackUrl,
+        redirect: false, // Don't redirect automatically
         email: formData.email,
         password: formData.password,
       });
       
-      // This code should only run if redirect: true fails for some reason
       if (result?.error) {
         setError('Invalid email or password');
         setLoading(false);
       } else {
-        // If signIn's redirect doesn't work, try manual redirect with longer delay
-        console.log("Login successful, but redirect failed. Trying manual redirect.");
+        // Login successful, now handle redirect manually
+        setSuccess('Login successful! Redirecting...');
         
-        // Use router.refresh() to force a rerender
+        // Refresh the router to update auth state
         router.refresh();
         
-        // Longer delay to ensure the session is updated
+        // Manual redirect with a delay to allow session to be established
         setTimeout(() => {
-          console.log("Manual redirect to:", callbackUrl);
-          window.location.href = callbackUrl; // Use window.location for hard redirect
-        }, 500);
+          // For protected routes, use window.location for a full page refresh
+          // which ensures the middleware sees the updated auth state
+          window.location.href = callbackUrl;
+        }, 1000);
       }
     } catch (error) {
       console.error("Sign-in error:", error);
