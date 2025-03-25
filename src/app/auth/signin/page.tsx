@@ -45,28 +45,36 @@ function SignInContent() {
     setError('');
     
     try {
+      // Use the built-in redirect capability of signIn
+      // First attempt with redirect: true
+      console.log(`Signing in with redirect to: ${callbackUrl}`);
+      
       const result = await signIn('credentials', {
-        redirect: false,
+        redirect: true,
+        callbackUrl: callbackUrl,
         email: formData.email,
         password: formData.password,
       });
       
+      // This code should only run if redirect: true fails for some reason
       if (result?.error) {
         setError('Invalid email or password');
         setLoading(false);
       } else {
-        // Successfully signed in, redirect to the callback URL or dashboard
-        console.log("Login successful, redirecting to:", callbackUrl);
+        // If signIn's redirect doesn't work, try manual redirect with longer delay
+        console.log("Login successful, but redirect failed. Trying manual redirect.");
         
-        // Use router.refresh() to update the session state before redirecting
+        // Use router.refresh() to force a rerender
         router.refresh();
         
-        // Slight delay to ensure the session is updated
+        // Longer delay to ensure the session is updated
         setTimeout(() => {
-          router.push(callbackUrl);
-        }, 100);
+          console.log("Manual redirect to:", callbackUrl);
+          window.location.href = callbackUrl; // Use window.location for hard redirect
+        }, 500);
       }
     } catch (error) {
+      console.error("Sign-in error:", error);
       setError('An error occurred during sign-in');
       setLoading(false);
     }
