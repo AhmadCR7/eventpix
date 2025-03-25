@@ -75,6 +75,26 @@ export const { handlers: { GET, POST }, auth } = NextAuth({
     error: "/auth/error"
   },
   callbacks: {
+    // Add proper redirect handling
+    async redirect({ url, baseUrl }) {
+      // If URL starts with a slash, append it to baseUrl (absolute path within our app)
+      if (url.startsWith("/")) {
+        const redirectUrl = `${baseUrl}${url}`;
+        console.log(`Redirecting to internal URL: ${redirectUrl}`);
+        return redirectUrl;
+      }
+      
+      // If URL is already a full URL matching our baseUrl, use it
+      else if (new URL(url).origin === baseUrl) {
+        console.log(`Redirecting to full URL: ${url}`);
+        return url;
+      }
+      
+      // Otherwise, redirect to baseUrl (usually dashboard)
+      console.log(`Redirecting to base URL: ${baseUrl}`);
+      return baseUrl;
+    },
+    
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

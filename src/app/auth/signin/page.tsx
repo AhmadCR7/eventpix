@@ -20,8 +20,15 @@ function SignInContent() {
   // Get the callbackUrl from the URL if it exists
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
 
-  // Check for success message in URL
+  // Check for error message in URL
   useEffect(() => {
+    const errorMsg = searchParams?.get('error');
+    if (errorMsg) {
+      setError(errorMsg === 'CredentialsSignin' 
+        ? 'Invalid email or password' 
+        : `Authentication error: ${errorMsg}`);
+    }
+    
     const successMsg = searchParams?.get('success');
     if (successMsg) {
       setSuccess(successMsg);
@@ -45,28 +52,21 @@ function SignInContent() {
     setError('');
     
     try {
+      // Use built-in redirect to handle the callback URL properly
       const result = await signIn('credentials', {
-        redirect: false, // Don't redirect automatically
+        redirect: true,
         email: formData.email,
         password: formData.password,
+        callbackUrl: callbackUrl,
       });
-      
+
+      // This code only runs if redirect: true fails
       if (result?.error) {
         setError('Invalid email or password');
         setLoading(false);
-      } else {
-        // Login successful, now handle redirect manually
-        setSuccess('Login successful! Redirecting...');
-        
-        // Refresh the router to update auth state
-        router.refresh();
-        
-        // Manual redirect with a delay to allow session to be established
-        setTimeout(() => {
-          // For protected routes, use window.location for a full page refresh
-          // which ensures the middleware sees the updated auth state
-          window.location.href = callbackUrl;
-        }, 1000);
+      } else if (result?.url) {
+        // If we have a URL but didn't redirect, try a hard redirect
+        window.location.href = result.url;
       }
     } catch (error) {
       console.error("Sign-in error:", error);
