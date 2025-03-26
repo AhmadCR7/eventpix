@@ -5,8 +5,10 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getEventById, updateEvent } from '../../../lib/events';
 import Alert from '../../../components/Alert';
+import { useAuth } from '@clerk/nextjs';
 
 export default function EditEventPage({ params }: { params: { id: string } }) {
+  const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const { id } = params;
   const eventId = id;

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { deleteEventById } from '../../lib/events';
 
 export default function EventActions({ 
@@ -18,8 +18,8 @@ export default function EventActions({
   isOwner?: boolean;
 }) {
   const router = useRouter();
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
+  const { isSignedIn, userId } = useAuth();
+  const { user } = useUser();
   
   // UI state
   const [isDeleting, setIsDeleting] = useState(false);
@@ -41,7 +41,9 @@ export default function EventActions({
       
       try {
         // Call the server action to delete the event with user context
-        const success = await deleteEventById(eventId, userId, isAdmin);
+        // We pass isOwner as true since we're already checking that on the server side
+        // and the database user ID is handled there too
+        const success = await deleteEventById(eventId, undefined, isAdmin);
         
         if (success) {
           // Redirect to the events list

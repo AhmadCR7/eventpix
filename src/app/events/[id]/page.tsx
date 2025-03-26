@@ -2,20 +2,23 @@ import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { getEventById } from '../../lib/events';
-import { auth } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId } from '../../lib/user';
 import EventActions from './EventActions';
 import EventQRCode from './EventQRCode';
 import PhotoManager from './PhotoManager';
-import Guestbook from './Guestbook';
 
 export default async function EventPage({ params }: { params: { id: string } }) {
-  // Get authentication session
-  const session = await auth();
+  // Get authentication from Clerk
+  const { userId: clerkUserId } = await auth();
   
   // If user is not signed in, redirect to sign in page
-  if (!session) {
-    redirect('/auth/signin?callbackUrl=/events');
+  if (!clerkUserId) {
+    redirect('/sign-in?redirect_url=/events');
   }
+
+  // Get the database user ID from Clerk user
+  const dbUserId = await getCurrentUserId();
 
   // Await the id parameter as required by Next.js 15
   const eventId = await params.id;
@@ -28,10 +31,10 @@ export default async function EventPage({ params }: { params: { id: string } }) 
       notFound();
     }
 
-    // If event is private and user is not the host or admin, check for cookie
-    const isAdmin = session?.user?.role === 'ADMIN';
-    // Use userId as the hostId since that's how our database is structured
-    const isHost = event.userId === session?.user?.id;
+    // For now, hardcode isAdmin to false until we implement admin roles with Clerk
+    const isAdmin = false;
+    // Check if the user is the owner of this event
+    const isHost = event.userId === dbUserId;
     
     // Only check for verification if user is not admin or host
     if (event.private && !isHost && !isAdmin) {
@@ -137,8 +140,6 @@ export default async function EventPage({ params }: { params: { id: string } }) 
                   </div>
                   
                   <PhotoManager eventId={event.id} />
-                  
-                  <Guestbook eventId={event.id} />
                 </div>
               </div>
             </div>

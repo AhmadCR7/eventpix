@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { auth } from '../api/auth/[...nextauth]/route';
+import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId, debugUserInfo } from '../lib/user';
 import { getAllEvents } from '../lib/events';
 
 // Enhanced Event Card component with better styling
@@ -72,20 +73,27 @@ function EventCard({ event }: { event: any }) {
 }
 
 export default async function EventsPage() {
-  // Get authentication session
-  const session = await auth();
+  // Get authentication with Clerk
+  const { userId } = await auth();
   
   // If user is not signed in, redirect to sign in page
-  if (!session) {
-    redirect('/auth/signin?callbackUrl=/events');
+  if (!userId) {
+    redirect('/sign-in?redirect_url=/events');
   }
 
-  // Check if user has admin role
-  const isAdmin = session?.user?.role === 'ADMIN';
-  const userId = session?.user?.id;
+  // Debug user information
+  await debugUserInfo();
+
+  // Get the database user ID
+  const dbUserId = await getCurrentUserId();
+  
+  console.log('Events page - dbUserId:', dbUserId);
+  
+  // For now, hardcode isAdmin to false (you may want to implement admin role checking)
+  const isAdmin = false;
 
   // Get events for the authenticated user (or all events if admin)
-  const events = await getAllEvents(userId, isAdmin);
+  const events = await getAllEvents(dbUserId || undefined, isAdmin);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">

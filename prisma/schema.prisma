@@ -20,10 +20,11 @@ model User {
   email         String    @unique
   password      String?
   image         String?
-  role          String?   @default("HOST")
+  role          String    @default("HOST") // "ADMIN", "HOST" or "GUEST"
+  externalId    String?   @unique  // Clerk user ID
   accounts      Account[]
   sessions      Session[]
-  events        Event[]   @relation("UserEvents")
+  events        Event[]   // Make sure this matches the relation name in Event model
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -66,40 +67,30 @@ model VerificationToken {
 
 // Event model with private and pin fields
 model Event {
-  id              String    @id @default(uuid())
-  name            String
-  date            DateTime
-  welcomeMessage  String    @default("")
-  description     String?
-  location        String?
-  private         Boolean   @default(false) // Whether the event requires a PIN
-  pin             String?   // PIN for accessing private events
-  userId          String?   // Relation to the host user
-  user            User?     @relation("UserEvents", fields: [userId], references: [id])
-  photos          Photo[]
-  guestbookMessages GuestbookMessage[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  name           String
+  date           DateTime
+  welcomeMessage String?   @default("")
+  description    String?
+  location       String?
+  private        Boolean   @default(false)
+  pin            String?
+  userId         String?
+  user           User?     @relation(fields: [userId], references: [id])
+  photos         Photo[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 // Photo model
 model Photo {
   id           String   @id @default(uuid())
   url          String
-  publicId     String?  // For cloud storage reference (e.g., Cloudinary)
+  publicId     String?
   eventId      String
   event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  uploaderName String?  // Optional name of the guest who uploaded
+  albumId      String?
+  uploaderName String?
+  caption      String?
   createdAt    DateTime @default(now())
-}
-
-// Guestbook message model
-model GuestbookMessage {
-  id        String   @id @default(uuid())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  name      String?
-  message   String
-  approved  Boolean  @default(true)
-  createdAt DateTime @default(now())
 } 

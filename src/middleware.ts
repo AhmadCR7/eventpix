@@ -1,44 +1,46 @@
+import { clerkMiddleware } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-// Explicitly set runtime to nodejs
-export const runtime = 'nodejs';
+// Define public paths that don't require authentication
+const publicPaths = [
+  '/',
+  '/sign-in*',
+  '/sign-up*',
+  '/api/webhook*',
+  '/api/events/public*',
+  '/events/public*',
+];
 
-// Extremely simplified middleware
-export function middleware(request: NextRequest) {
-  const url = request.nextUrl;
-  const { pathname } = url;
-  
-  // Only handle auth redirects for events, dashboard, profile
-  if (
-    (pathname.startsWith('/events') || 
-     pathname.startsWith('/dashboard') || 
-     pathname.startsWith('/profile')) &&
-    !pathname.startsWith('/events/verify')
-  ) {
-    // Check for session token
-    const hasSession = request.cookies.has('next-auth.session-token') || 
-                       request.cookies.has('__Secure-next-auth.session-token');
-    
-    if (!hasSession) {
-      // Create redirect URL
-      const redirectUrl = new URL('/auth/signin', url.origin);
-      redirectUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(redirectUrl);
+const isPublicPath = (path: string) => {
+  return publicPaths.some(publicPath => {
+    if (publicPath.endsWith('*')) {
+      const prefix = publicPath.slice(0, -1);
+      return path.startsWith(prefix);
     }
-  }
-  
-  // Default: allow the request to proceed
-  return NextResponse.next();
-}
+    return path === publicPath;
+  });
+};
 
-// Use a simplified matcher
+// Use Clerk's middleware with a custom handler
+export default clerkMiddleware((auth, req) => {
+  const path = req.nextUrl.pathname;
+  
+  // Allow public paths to proceed without authentication
+  if (isPublicPath(path)) {
+    return NextResponse.next();
+  }
+
+  // For non-public paths, check if the user is authenticated
+  return auth().then(auth => {
+    if (!auth.userId) {
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
+    }
+    return NextResponse.next();
+  });
+});
+
 export const config = {
-  matcher: [
-    '/dashboard/:path*',
-    '/profile/:path*',
-    '/events/:path*', 
-    // Exclude paths that don't need auth
-    '/((?!api|_next/static|_next/image|auth|favicon.ico|guest).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 }; 

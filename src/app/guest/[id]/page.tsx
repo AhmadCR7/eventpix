@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getEventById } from '../../lib/events';
 import GuestPhotoManager from './GuestPhotoManager';
-import GuestGuestbook from './GuestGuestbook';
 
 export default async function GuestUploadPage({ 
   params 
@@ -70,10 +69,6 @@ export default async function GuestUploadPage({
             
             <div className="mb-6">
               <GuestPhotoManager eventId={eventId} eventName={event.name} />
-            </div>
-            
-            <div className="mb-6">
-              <GuestGuestbook eventId={eventId} eventName={event.name} />
             </div>
             
             <div className="text-center text-sm text-gray-500 mt-8">

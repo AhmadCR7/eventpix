@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ClerkProvider } from '@clerk/nextjs';
 import AuthNav from "./components/AuthNav";
-import Providers from "./providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,15 +29,15 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen text-gray-800`}
-        style={{
-          backgroundColor: "#f9f7f5",
-          backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')",
-          backgroundAttachment: "fixed"
-        }}
-      >
-        <Providers>
+      <ClerkProvider>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen text-gray-800`}
+          style={{
+            backgroundColor: "#f9f7f5",
+            backgroundImage: "url('https://www.transparenttextures.com/patterns/cream-paper.png')",
+            backgroundAttachment: "fixed"
+          }}
+        >
           <AuthNav />
           <main>
             {children}
@@ -105,8 +105,8 @@ export default function RootLayout({
               </div>
             </div>
           </footer>
-        </Providers>
-      </body>
+        </body>
+      </ClerkProvider>
     </html>
   );
 }

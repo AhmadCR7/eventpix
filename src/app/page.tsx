@@ -1,8 +1,15 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { auth } from "@clerk/nextjs/server";
 
-export default function Home() {
+export default async function Home() {
+  // Get authentication with Clerk
+  const { userId } = await auth();
+  
+  // We're no longer redirecting logged-in users
+  // This allows everyone to see the home page
+
   return (
     <div className="flex flex-col items-center">
       {/* Hero Section */}

@@ -61,15 +61,24 @@ export async function addEvent(event: Omit<Event, 'id'>): Promise<Event> {
 // Helper function to get all events
 export async function getAllEvents(userId?: string, isAdmin: boolean = false): Promise<Event[]> {
   try {
+    // If no userId is provided, log warning and return empty array
+    if (!userId && !isAdmin) {
+      console.warn('getAllEvents called without userId and not as admin');
+      return [];
+    }
+    
     // If user is admin, return all events
-    // If userId is provided and user is not admin, filter by userId
-    // Otherwise, return no events (should not happen with proper auth)
-    const where = isAdmin ? {} : userId ? { userId } : { id: 'no-events' };
+    // If userId is provided, filter by userId
+    const where = isAdmin ? {} : { userId };
+    
+    console.log('Fetching events with query:', { where });
     
     const events = await prisma.event.findMany({
       where,
       orderBy: { date: 'desc' },
     });
+    
+    console.log(`Found ${events.length} events for user ${userId}`);
     
     return events.map(dbEventToEvent);
   } catch (error) {

@@ -29,10 +29,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Simplified middleware configuration
-  experimental: {
-    serverComponentsExternalPackages: ["bcrypt", "bcryptjs"],
-  },
+  // External packages for server components
+  serverExternalPackages: ["bcrypt", "bcryptjs"],
 }
 
 module.exports = nextConfig 

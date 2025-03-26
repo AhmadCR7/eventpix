@@ -1,27 +1,27 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function Dashboard() {
-  const { data: session, status } = useSession();
+  const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Redirect if not authenticated
-    if (status === 'unauthenticated') {
-      router.push('/auth/signin');
+    if (isLoaded && !isSignedIn) {
+      router.push('/sign-in');
     }
 
     // Fetch user's events if authenticated
-    if (status === 'authenticated') {
+    if (isLoaded && isSignedIn) {
       fetchUserEvents();
     }
-  }, [status, router]);
+  }, [isLoaded, isSignedIn, router]);
 
   const fetchUserEvents = async () => {
     try {
@@ -40,7 +40,7 @@ export default function Dashboard() {
     }
   };
 
-  if (status === 'loading' || (status === 'authenticated' && loading)) {
+  if (isLoaded && !isSignedIn || (isLoaded && isSignedIn && loading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -51,7 +51,7 @@ export default function Dashboard() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Welcome, {session?.user?.name || 'User'}</h1>
+        <h1 className="text-3xl font-bold">Welcome, {isSignedIn ? 'User' : 'Guest'}</h1>
         <Link 
           href="/events/create" 
           className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

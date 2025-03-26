@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useSession, signOut } from 'next-auth/react';
+import { useAuth, useUser, SignOutButton } from '@clerk/nextjs';
 
 const Navbar: React.FC = () => {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
   const [eventsDropdownOpen, setEventsDropdownOpen] = useState(false);
   const [pricingDropdownOpen, setPricingDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -130,7 +131,7 @@ const Navbar: React.FC = () => {
         
         <div className="flex items-center space-x-4">
           {/* Auth Buttons */}
-          {status === 'authenticated' ? (
+          {isLoaded && isSignedIn ? (
             <div className="relative">
               <button 
                 className="text-white hover:text-rose-200 transition-colors flex items-center"
@@ -138,7 +139,7 @@ const Navbar: React.FC = () => {
                 onBlur={() => setTimeout(() => setUserDropdownOpen(false), 200)}
                 aria-label="User Account"
               >
-                <span className="mr-2 hidden sm:inline">{session?.user?.name}</span>
+                <span className="mr-2 hidden sm:inline">{user?.firstName}</span>
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -161,15 +162,14 @@ const Navbar: React.FC = () => {
                     >
                       Profile Settings
                     </Link>
-                    <button 
-                      onClick={() => {
-                        signOut({ callbackUrl: '/' });
-                        setUserDropdownOpen(false);
-                      }}
-                      className="w-full text-left block px-4 py-2 text-gray-800 hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      Sign Out
-                    </button>
+                    <SignOutButton>
+                      <button 
+                        onClick={() => setUserDropdownOpen(false)}
+                        className="w-full text-left block px-4 py-2 text-gray-800 hover:bg-rose-50 hover:text-rose-600"
+                      >
+                        Sign Out
+                      </button>
+                    </SignOutButton>
                   </div>
                 </div>
               )}
@@ -177,13 +177,13 @@ const Navbar: React.FC = () => {
           ) : (
             <>
               <Link 
-                href="/auth/signin" 
+                href="/sign-in" 
                 className="text-white hover:text-rose-200 transition-colors hidden sm:inline-block"
               >
                 Sign In
               </Link>
               <Link 
-                href="/auth/signup" 
+                href="/sign-up" 
                 className="bg-white text-rose-600 px-6 py-2 rounded-full hover:bg-gray-100 transition-colors text-sm font-medium hidden md:block"
               >
                 Sign Up
@@ -243,7 +243,7 @@ const Navbar: React.FC = () => {
             >
               Help Center
             </Link>
-            {status === 'authenticated' ? (
+            {isLoaded && isSignedIn ? (
               <>
                 <Link 
                   href="/dashboard"
@@ -252,28 +252,34 @@ const Navbar: React.FC = () => {
                 >
                   Dashboard
                 </Link>
-                <button
-                  onClick={() => {
-                    signOut({ callbackUrl: '/' });
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-white hover:text-rose-200 py-2 text-left"
+                <Link 
+                  href="/profile"
+                  className="text-white hover:text-rose-200 py-2"
+                  onClick={() => setMobileMenuOpen(false)}
                 >
-                  Sign Out
-                </button>
+                  Profile Settings
+                </Link>
+                <SignOutButton>
+                  <button
+                    className="text-white hover:text-rose-200 py-2 text-left w-full"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign Out
+                  </button>
+                </SignOutButton>
               </>
             ) : (
-              <div className="pt-2 flex space-x-4">
+              <div className="flex space-x-4 py-2">
                 <Link 
-                  href="/auth/signin" 
-                  className="inline-block bg-transparent border border-rose-600 text-white px-6 py-2 rounded-full hover:bg-rose-700 transition-colors text-sm font-medium"
+                  href="/sign-in"
+                  className="text-white hover:text-rose-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In
                 </Link>
                 <Link 
-                  href="/auth/signup" 
-                  className="inline-block bg-rose-600 text-white px-6 py-2 rounded-full hover:bg-rose-700 transition-colors text-sm font-medium"
+                  href="/sign-up"
+                  className="text-rose-300 hover:text-rose-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign Up

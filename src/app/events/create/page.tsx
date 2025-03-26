@@ -1,15 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useAuth, useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { addEvent } from '../../lib/events';
 import Alert from '../../components/Alert';
+import { getCurrentUserId } from '../../lib/user';
 
 export default function CreateEvent() {
-  const { data: session, status } = useSession();
+  const { isLoaded, isSignedIn, userId: clerkUserId } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
+  
+  // State to store the database user ID
+  const [dbUserId, setDbUserId] = useState<string | null>(null);
+  
+  // Load the database user ID when the component mounts
+  useEffect(() => {
+    const fetchDbUserId = async () => {
+      try {
+        if (isSignedIn && user?.emailAddresses?.[0]?.emailAddress) {
+          // Make a request to get the database user ID
+          const response = await fetch(`/api/user/get-id?email=${encodeURIComponent(user.emailAddresses[0].emailAddress)}`);
+          if (response.ok) {
+            const data = await response.json();
+            setDbUserId(data.userId);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch database user ID:', error);
+      }
+    };
+    
+    fetchDbUserId();
+  }, [isSignedIn, user]);
   
   // Form state
   const [eventName, setEventName] = useState('');
@@ -35,7 +60,8 @@ export default function CreateEvent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Redirect if not authenticated
-  if (status === 'loading') {
+  if (isLoaded && !isSignedIn) {
+    router.push('/sign-in?redirect_url=/events/create');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -105,15 +131,15 @@ export default function CreateEvent() {
       setIsSubmitting(true);
       
       try {
-        // Create a new event using the server action
-        await addEvent({
+        // Create the event with the user ID from the database
+        const newEvent = await addEvent({
           name: eventName.trim(),
-          date: new Date(eventDate).toISOString(),
+          date: eventDate,
           welcomeMessage: welcomeMessage.trim(),
           description: description.trim(),
           private: isPrivate,
           pin: isPrivate ? pin : null,
-          userId: session?.user?.id // Pass the user ID to associate the event with the user
+          userId: dbUserId, // Associate the event with the database user ID
         });
         
         // Reset the form
@@ -132,10 +158,12 @@ export default function CreateEvent() {
         setTimeout(() => {
           setSuccessMessage('');
         }, 5000);
+        
+        // Success - redirect to the event page
+        router.push(`/events/${newEvent.id}`);
       } catch (error) {
-        console.error('Error creating event:', error);
+        console.error('Failed to create event:', error);
         setSuccessMessage('Failed to create event. Please try again.');
-      } finally {
         setIsSubmitting(false);
       }
     }
