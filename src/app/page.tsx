@@ -1,14 +1,32 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import MemorialSlider from "./components/MemorialSlider";
+import { getAllEvents } from "./lib/events";
+import { getCurrentUserId } from "./lib/user";
 
 export default async function Home() {
   // Get authentication with Clerk
   const { userId } = await auth();
   
-  // We're no longer redirecting logged-in users
-  // This allows everyone to see the home page
+  // Check if user has events
+  let hasEvents = false;
+  
+  if (userId) {
+    try {
+      // Get the database user ID
+      const dbUserId = await getCurrentUserId();
+      
+      if (dbUserId) {
+        // Get all events for this user
+        const events = await getAllEvents(dbUserId);
+        hasEvents = events.length > 0;
+      }
+    } catch (error) {
+      console.error("Error checking for user events:", error);
+    }
+  }
 
   return (
     <div className="flex flex-col items-center">
@@ -27,24 +45,53 @@ export default async function Home() {
             No App. No Fuss.
           </p>
           
-          <div className="text-rose-400 font-medium tracking-wider mb-12">
-            USE IT FOR PHOTOS + VIDEOS + GUESTBOOK + SLIDESHOW
+          <div className="text-gray-500 font-medium tracking-wider mb-12">
+            USE IT FOR PHOTOS + VIDEOS + SLIDESHOW
           </div>
           
           <div className="flex space-x-4">
-            <Link 
-              href="/events/create" 
-              className="bg-rose-600 text-white px-8 py-3 rounded-full hover:bg-rose-700 transition-colors shadow-sm hover:shadow-md font-medium"
-            >
-              Get Started
-            </Link>
+            {userId ? (
+              hasEvents ? (
+                <Link 
+                  href="/events" 
+                  className="btn-primary"
+                >
+                  My Events
+                </Link>
+              ) : (
+                <Link 
+                  href="/events/create" 
+                  className="btn-primary"
+                >
+                  Create Your First Event
+                </Link>
+              )
+            ) : (
+              <Link 
+                href="/sign-up" 
+                className="btn-primary"
+              >
+                Get Started
+              </Link>
+            )}
             
-            <Link 
-              href="/events" 
-              className="bg-white text-rose-700 border border-rose-200 px-8 py-3 rounded-full hover:bg-rose-50 transition-colors shadow-sm hover:shadow-md font-medium"
-            >
-              View Events
-            </Link>
+            {userId && hasEvents && (
+              <Link 
+                href="/events/create" 
+                className="btn-outline"
+              >
+                Create New Event
+              </Link>
+            )}
+            
+            {!userId && (
+              <Link 
+                href="/sign-in" 
+                className="btn-outline"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
         
@@ -52,20 +99,24 @@ export default async function Home() {
         <div className="md:w-1/2 relative">
           <div className="relative h-80 w-full md:h-[450px] rounded-lg overflow-hidden">
             <Image 
-              src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1469&auto=format&fit=crop" 
+              src="/images/events/hero.jpg" 
               alt="Wedding celebration" 
               fill
               className="object-cover rounded-lg"
               priority
+              sizes="(max-width: 768px) 100vw, 50vw"
             />
           </div>
         </div>
       </div>
+
+      {/* Memorial Slider Section */}
+      <MemorialSlider />
       
       {/* Event Types Section */}
       <div className="w-full bg-white py-16">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-center text-rose-400 font-medium tracking-wider mb-8">
+          <h2 className="text-center text-gray-500 font-medium tracking-wider mb-8">
             LOVED & USED FOR
           </h2>
           
@@ -73,11 +124,11 @@ export default async function Home() {
             <div className="w-full md:w-64 text-center">
               <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                 <Image 
-                  src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1632&auto=format&fit=crop" 
+                  src="/images/events/business.jpg" 
                   alt="Corporate & Business Events" 
                   width={240}
-                  height={180}
-                  className="object-cover"
+                  height={240}
+                  className="object-cover w-full h-full"
                 />
               </div>
               <h3 className="font-['Playfair_Display'] font-medium text-gray-800">
@@ -88,11 +139,11 @@ export default async function Home() {
             <div className="w-full md:w-64 text-center">
               <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                 <Image 
-                  src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?q=80&w=1470&auto=format&fit=crop" 
+                  src="/images/events/birthday.jpg" 
                   alt="Birthdays" 
                   width={240}
-                  height={180}
-                  className="object-cover"
+                  height={240}
+                  className="object-cover w-full h-full"
                 />
               </div>
               <h3 className="font-['Playfair_Display'] font-medium text-gray-800">
@@ -103,11 +154,11 @@ export default async function Home() {
             <div className="w-full md:w-64 text-center">
               <div className="bg-gray-100 h-48 rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                 <Image 
-                  src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?q=80&w=1470&auto=format&fit=crop" 
+                  src="/images/events/engagement.jpg" 
                   alt="Engagement Parties" 
                   width={240}
-                  height={180}
-                  className="object-cover"
+                  height={240}
+                  className="object-cover w-full h-full"
                 />
               </div>
               <h3 className="font-['Playfair_Display'] font-medium text-gray-800">
@@ -126,24 +177,24 @@ export default async function Home() {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-rose-100 text-center">
-              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 text-2xl font-bold mx-auto mb-4">
+            <div className="surface-card">
+              <div className="w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4 rounded-full" style={{ backgroundColor: 'var(--color-secondary-light)', color: 'var(--color-primary-dark)' }}>
                 1
               </div>
               <h3 className="text-xl font-medium mb-3 text-gray-800">Create Your Event</h3>
               <p className="text-gray-600">Set up your event details and get a unique QR code for your guests.</p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-rose-100 text-center">
-              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 text-2xl font-bold mx-auto mb-4">
+            <div className="surface-card">
+              <div className="w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4 rounded-full" style={{ backgroundColor: 'var(--color-secondary-light)', color: 'var(--color-primary-dark)' }}>
                 2
               </div>
               <h3 className="text-xl font-medium mb-3 text-gray-800">Share With Guests</h3>
               <p className="text-gray-600">Display your QR code at your event for guests to scan and upload photos.</p>
             </div>
             
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-rose-100 text-center">
-              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 text-2xl font-bold mx-auto mb-4">
+            <div className="surface-card">
+              <div className="w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4 rounded-full" style={{ backgroundColor: 'var(--color-secondary-light)', color: 'var(--color-primary-dark)' }}>
                 3
               </div>
               <h3 className="text-xl font-medium mb-3 text-gray-800">Enjoy Your Photos</h3>
@@ -152,12 +203,60 @@ export default async function Home() {
           </div>
           
           <div className="text-center mt-12">
-            <Link 
-              href="/events/create" 
-              className="bg-rose-600 text-white px-8 py-3 rounded-full hover:bg-rose-700 transition-colors shadow-sm hover:shadow-md font-medium"
-            >
-              Create Your First Event
-            </Link>
+            {userId ? (
+              hasEvents ? (
+                <Link 
+                  href="/events" 
+                  className="btn-primary"
+                >
+                  Go to My Events
+                </Link>
+              ) : (
+                <Link 
+                  href="/events/create" 
+                  className="btn-primary"
+                >
+                  Create Your First Event
+                </Link>
+              )
+            ) : (
+              <Link 
+                href="/sign-up" 
+                className="btn-primary"
+              >
+                Get Started
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Cloudinary Image Test */}
+      <div className="max-w-5xl w-full mt-16">
+        <div className="text-center mb-12">
+          <h2 className="text-2xl font-bold mb-4">Cloudinary Image Test</h2>
+          <p className="mb-4">If you can see the sample images below, Cloudinary is configured correctly:</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative h-64 rounded-lg overflow-hidden">
+              <p className="mb-2">Sample Image 1 (Direct Cloudinary URL):</p>
+              <Image 
+                src="https://res.cloudinary.com/dov2iujbo/image/upload/v1716932399/event_banners/y7m1w2blwxovb2jipvl3.jpg" 
+                alt="Sample 1" 
+                fill 
+                className="object-cover" 
+              />
+            </div>
+            
+            <div className="relative h-64 rounded-lg overflow-hidden">
+              <p className="mb-2">Sample Image 2 (Direct Cloudinary URL):</p>
+              <Image 
+                src="https://res.cloudinary.com/dov2iujbo/image/upload/v1716932499/event_banners/ffxn5pgtkiuocidq5u0w.jpg" 
+                alt="Sample 2" 
+                fill 
+                className="object-cover" 
+              />
+            </div>
           </div>
         </div>
       </div>

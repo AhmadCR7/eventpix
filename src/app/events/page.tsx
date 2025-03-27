@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { auth } from '@clerk/nextjs/server';
 import { getCurrentUserId, debugUserInfo } from '../lib/user';
 import { getAllEvents } from '../lib/events';
@@ -34,7 +35,18 @@ function EventCard({ event }: { event: any }) {
   return (
     <Link key={event.id} href={`/events/${event.id}`}>
       <div className="group bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all h-full flex flex-col transform hover:-translate-y-1">
-        <div className="relative h-40" style={{ background: getGradient(event.name) }}>
+        <div className="relative h-40">
+          {event.bannerUrl ? (
+            <Image 
+              src={event.bannerUrl}
+              alt={`${event.name} banner`}
+              fill
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="absolute inset-0" style={{ background: getGradient(event.name) }}></div>
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all"></div>
           <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
             <h2 className="font-bold text-2xl mb-1 drop-shadow-sm truncate">{event.name}</h2>

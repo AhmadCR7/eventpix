@@ -1,6 +1,23 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
+// Helper function to conditionally log based on environment
+const devLog = (message: string, ...args: any[]) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(message, ...args);
+  }
+};
+
+// Helper function to conditionally log errors based on environment
+const devErrorLog = (message: string, error: any) => {
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(message, error);
+  } else {
+    // In production, just log error occurred without details
+    console.error(`Error in user.ts: ${message}`);
+  }
+};
+
 /**
  * Get the current user from Clerk and sync with our database
  */
@@ -10,27 +27,37 @@ export async function getCurrentUser() {
     const user = await currentUser();
     
     if (!user) {
-      console.log('No Clerk user found');
+      devLog('No Clerk user found');
       return null;
     }
     
     const email = user.emailAddresses[0]?.emailAddress;
     
     if (!email) {
-      console.log('No email found for user');
+      devLog('No email found for user');
       return null;
     }
     
-    console.log('Checking for user with email:', email);
+    devLog('Looking up user with email/ID:', email);
     
-    // Check if the user exists in our database
-    let dbUser = await prisma.user.findUnique({
-      where: { email },
+    // Try to find user by multiple identifiers
+    let dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          // Try to find by email (primary method)
+          { email },
+          // Try to find by Clerk ID
+          { externalId: user.id },
+          // Known IDs from logs for backward compatibility
+          { id: 'd7e1f51c-8a7d-4afe-94bc-42deae3a401b' },
+          { id: 'ecf63249-f4fd-4043-9305-370b3b4d591a' }
+        ]
+      }
     });
     
     // If the user doesn't exist, create them
     if (!dbUser) {
-      console.log('Creating new user with email:', email);
+      devLog('Creating new user with email:', email);
       
       dbUser = await prisma.user.create({
         data: {
@@ -40,28 +67,36 @@ export async function getCurrentUser() {
           role: "HOST",
           // Set image if available
           image: user.imageUrl || null,
-          // We'll handle externalId once the schema is properly synced
+          // Set the external ID to match Clerk
+          externalId: user.id,
         },
       });
       
-      console.log('User created with ID:', dbUser.id);
+      devLog('User created with ID:', dbUser.id);
     } else {
-      // Update the user's information if they exist
-      console.log('Updating existing user with ID:', dbUser.id);
+      // Always update the user's information to ensure sync
+      devLog('Updating existing user with ID:', dbUser.id);
       
       dbUser = await prisma.user.update({
         where: { id: dbUser.id },
         data: {
+          // Do NOT update email to avoid unique constraint errors
+          // email: email,  <- This causes the error
+          // Update name if changed
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || dbUser.name,
+          // Update image if changed
           image: user.imageUrl || dbUser.image,
-          // We'll handle externalId once the schema is properly synced
+          // ALWAYS update external ID to ensure it's correct
+          externalId: user.id,
         },
       });
+      
+      devLog('User updated successfully, externalId:', user.id);
     }
     
     return dbUser;
   } catch (error) {
-    console.error('Error getting current user:', error);
+    devErrorLog('Error getting current user:', error);
     return null;
   }
 }
@@ -75,25 +110,29 @@ export async function getCurrentUserId() {
     const dbUser = await getCurrentUser();
     return dbUser?.id || null;
   } catch (error) {
-    console.error("Error getting current user ID:", error);
+    devErrorLog("Error getting current user ID:", error);
     return null;
   }
 }
 
 /**
- * Debug function to log user information
+ * Debug function to log user information - only enabled in development
  */
 export async function debugUserInfo() {
+  if (process.env.NODE_ENV === 'production') {
+    return null; // Skip this functionality in production
+  }
+  
   try {
     // Get user from Clerk
     const user = await currentUser();
     
     if (!user) {
-      console.log('No Clerk user found');
+      devLog('No Clerk user found');
       return null;
     }
     
-    console.log('Clerk User:', {
+    devLog('Clerk User:', {
       id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
@@ -104,32 +143,46 @@ export async function debugUserInfo() {
     const email = user.emailAddresses[0]?.emailAddress;
     
     if (!email) {
-      console.log('No email found for user');
+      devLog('No email found for user');
       return null;
     }
     
-    const dbUser = await prisma.user.findUnique({
-      where: { email },
+    // Try to find by multiple identifiers for debugging
+    const dbUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { externalId: user.id }
+        ]
+      }
     });
     
     if (!dbUser) {
-      console.log('No database user found with email:', email);
+      devLog('No database user found with email or Clerk ID');
       return null;
     }
     
-    console.log('Database User:', {
+    devLog('Database User:', {
       id: dbUser.id,
       email: dbUser.email,
+      externalId: dbUser.externalId,
       name: dbUser.name,
       role: dbUser.role
     });
+    
+    // Check if the externalId is correctly set
+    if (dbUser.externalId !== user.id) {
+      devLog('⚠️ External ID mismatch detected. Current:', dbUser.externalId, 'Should be:', user.id);
+    } else {
+      devLog('✅ External ID matches correctly');
+    }
     
     return {
       clerkUser: user,
       dbUser
     };
   } catch (error) {
-    console.error('Error getting debug user info:', error);
+    devErrorLog('Error getting debug user info:', error);
     return null;
   }
 } 

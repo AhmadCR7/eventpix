@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
+import Image from 'next/image';
 import { getEventById } from '../../lib/events';
 import { auth } from '@clerk/nextjs/server';
 import { getCurrentUserId } from '../../lib/user';
@@ -8,7 +9,11 @@ import EventActions from './EventActions';
 import EventQRCode from './EventQRCode';
 import PhotoManager from './PhotoManager';
 
-export default async function EventPage({ params }: { params: { id: string } }) {
+interface PageParams {
+  params: { id: string };
+}
+
+export default async function EventPage({ params }: PageParams) {
   // Get authentication from Clerk
   const { userId: clerkUserId } = await auth();
   
@@ -20,13 +25,14 @@ export default async function EventPage({ params }: { params: { id: string } }) 
   // Get the database user ID from Clerk user
   const dbUserId = await getCurrentUserId();
 
-  // Await the id parameter as required by Next.js 15
-  const eventId = await params.id;
-
   try {
+    // Access the event ID directly from params (it's not a Promise in Next.js 15)
+    const eventId = params.id;
+    
     // Get event details
     const event = await getEventById(eventId);
     
+    // If event not found, show 404
     if (!event) {
       notFound();
     }
@@ -84,8 +90,19 @@ export default async function EventPage({ params }: { params: { id: string } }) 
               </Link>
 
               <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                <div className="h-48 relative" style={{ background: getGradient(event.name) }}>
-                  <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+                <div className="h-48 relative">
+                  {event.bannerUrl ? (
+                    <Image 
+                      src={event.bannerUrl}
+                      alt={`${event.name} banner`}
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                  ) : (
+                    <div style={{ background: getGradient(event.name) }} className="w-full h-full"></div>
+                  )}
+                  <div className="absolute inset-0 bg-black bg-opacity-20"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-8">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                       <div>

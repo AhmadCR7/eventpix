@@ -73,6 +73,7 @@ model Event {
   welcomeMessage String?   @default("")
   description    String?
   location       String?
+  bannerUrl      String?   // Stores the uploaded banner image path
   private        Boolean   @default(false)
   pin            String?
   userId         String?

@@ -1,8 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neutral, elegant color palette */
+  --color-primary: #6e7f80;
+  --color-primary-light: #8ca3a3;
+  --color-primary-dark: #51615f;
+  
+  --color-secondary: #d4b483;
+  --color-secondary-light: #e6c9a2;
+  --color-secondary-dark: #c09c63;
+  
+  --color-accent: #c1666b;
+  --color-accent-light: #d48c8f;
+  --color-accent-dark: #a54b4f;
+  
+  --color-background: #f7f7f7;
+  --color-surface: #ffffff;
+  
+  --color-text-primary: #333333;
+  --color-text-secondary: #666666;
+  --color-text-light: #8a8a8a;
+  
+  --color-border: #e0e0e0;
+  --color-divider: #f0f0f0;
+  
+  --color-success: #4caf50;
+  --color-error: #f44336;
+  --color-warning: #ff9800;
+  --color-info: #2196f3;
 }
 
 @theme inline {
@@ -23,4 +48,108 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Utility Classes for our new design system */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+  transition-property: background-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text-primary);
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+  transition-property: background-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-secondary-dark);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-accent {
+  background-color: var(--color-accent);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+  transition-property: background-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.btn-accent:hover {
+  background-color: var(--color-accent-dark);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  padding: 0.75rem 2rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  transition-property: background-color, color;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.btn-outline:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.surface-container {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.secondary-container {
+  background-color: var(--color-secondary-light);
+  border: 1px solid var(--color-secondary);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.surface-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition-property: box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+.surface-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }

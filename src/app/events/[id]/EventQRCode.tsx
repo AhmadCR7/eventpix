@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import toast from 'react-hot-toast';
 
 interface EventQRCodeProps {
   eventId: string;
@@ -26,21 +27,25 @@ export default function EventQRCode({ eventId, eventName }: EventQRCodeProps) {
   const downloadQRCode = () => {
     if (!qrRef.current) return;
     
-    // Get the SVG element
     const svg = qrRef.current.querySelector('svg');
     if (!svg) return;
     
-    // Create a canvas element
+    toast.loading('Preparing QR code download...', { id: 'qr-download' });
+
+    // Create a canvas element to draw our QR code on
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      toast.error('Could not create QR code image', { id: 'qr-download' });
+      return;
+    }
     
     // Set canvas dimensions (larger size for better quality)
     canvas.width = 1000;
     canvas.height = 1000;
     
     // Create an image from the SVG
-    const img = new Image();
+    const img = document.createElement('img');
     const svgData = new XMLSerializer().serializeToString(svg);
     const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
     const svgUrl = URL.createObjectURL(svgBlob);
@@ -53,17 +58,28 @@ export default function EventQRCode({ eventId, eventName }: EventQRCodeProps) {
       // Draw the image
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       
-      // Convert to data URL and download
-      const pngUrl = canvas.toDataURL('image/png');
-      const downloadLink = document.createElement('a');
-      downloadLink.href = pngUrl;
-      downloadLink.download = `${eventName.replace(/\s+/g, '-')}-QR-Code.png`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
+      try {
+        // Convert to data URL and download
+        const pngUrl = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pngUrl;
+        downloadLink.download = `${eventName.replace(/\s+/g, '-')}-QR-Code.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        toast.success('QR code downloaded successfully', { id: 'qr-download' });
+      } catch (error) {
+        toast.error('Failed to download QR code', { id: 'qr-download' });
+        console.error('Error downloading QR code:', error);
+      }
       
       // Clean up
       URL.revokeObjectURL(svgUrl);
+    };
+    
+    img.onerror = () => {
+      toast.error('Failed to create QR code image', { id: 'qr-download' });
     };
     
     img.src = svgUrl;

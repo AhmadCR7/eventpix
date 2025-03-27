@@ -14,6 +14,7 @@ export interface Event {
   private?: boolean;
   userId?: string | null;
   hostId?: string | null; // Add hostId to match what's coming from the database
+  bannerUrl?: string | null; // Add bannerUrl for event banners
 }
 
 // Add an interface for photo data
@@ -36,6 +37,7 @@ const dbEventToEvent = (dbEvent: any): Event => {
     private: dbEvent.private || false,
     userId: dbEvent.userId || null,
     hostId: dbEvent.userId || null, // Map userId to hostId for backwards compatibility
+    bannerUrl: dbEvent.bannerUrl || null, // Include the bannerUrl in the returned object
   };
 };
 
@@ -51,6 +53,7 @@ export async function addEvent(event: Omit<Event, 'id'>): Promise<Event> {
       description: event.description || '',
       pin: event.pin || null,
       private: event.private || false,
+      bannerUrl: event.bannerUrl || null, // Include the bannerUrl in the create operation
       ...(event.userId ? { userId: event.userId } : {})
     },
   });
@@ -115,6 +118,7 @@ export async function updateEvent(
         description: updatedEvent.description || '',
         pin: updatedEvent.pin || null,
         private: updatedEvent.private || false,
+        bannerUrl: updatedEvent.bannerUrl || null, // Include the bannerUrl in the update operation
       },
     });
     

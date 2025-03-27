@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Photo } from '../../lib/events';
+import ConfirmModal from '@/app/components/ConfirmModal';
+import toast from 'react-hot-toast';
 
 interface PhotoGalleryProps {
   photos: Photo[];
@@ -13,6 +15,8 @@ export default function PhotoGallery({ photos, eventId, onPhotoDeleted }: PhotoG
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<Photo | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   if (!photos || photos.length === 0) {
     return (
@@ -51,25 +55,30 @@ export default function PhotoGallery({ photos, eventId, onPhotoDeleted }: PhotoG
     setSelectedPhoto(null);
   };
 
+  // Show delete confirmation modal
+  const showDeleteConfirmation = (photo: Photo, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent opening the photo modal
+    setPhotoToDelete(photo);
+    setShowDeleteModal(true);
+  };
+
+  // Close delete confirmation modal
+  const closeDeleteConfirmation = () => {
+    setShowDeleteModal(false);
+    setPhotoToDelete(null);
+  };
+
   // Handle photo deletion
-  const handleDeletePhoto = async (photo: Photo, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent opening the modal
+  const handleDeletePhoto = async () => {
+    if (!photoToDelete) return;
     
     // Reset any previous errors
     setDeleteError(null);
-    
-    // Ask for confirmation
-    const isConfirmed = window.confirm('Are you sure you want to delete this photo? This action cannot be undone.');
-    
-    if (!isConfirmed) {
-      return; // User cancelled
-    }
-    
     setIsDeleting(true);
     
     try {
       // Make DELETE request to the API
-      const response = await fetch(`/api/events/${eventId}/photos/${photo.id}`, {
+      const response = await fetch(`/api/events/${eventId}/photos/${photoToDelete.id}`, {
         method: 'DELETE',
       });
       
@@ -79,18 +88,22 @@ export default function PhotoGallery({ photos, eventId, onPhotoDeleted }: PhotoG
       }
       
       // Close the modal if this photo was being viewed
-      if (selectedPhoto && selectedPhoto.id === photo.id) {
+      if (selectedPhoto && selectedPhoto.id === photoToDelete.id) {
         setSelectedPhoto(null);
       }
       
       // Call the callback to refresh the photos list
       onPhotoDeleted();
+      toast.success('Photo deleted successfully');
       
     } catch (error: any) {
       console.error('Error deleting photo:', error);
       setDeleteError(error.message || 'Failed to delete photo');
+      toast.error(error.message || 'Failed to delete photo');
     } finally {
       setIsDeleting(false);
+      setShowDeleteModal(false);
+      setPhotoToDelete(null);
     }
   };
 
@@ -128,7 +141,7 @@ export default function PhotoGallery({ photos, eventId, onPhotoDeleted }: PhotoG
               {/* Delete button */}
               <button
                 className="absolute top-2 right-2 bg-black bg-opacity-60 text-white rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-opacity-80 focus:opacity-100 z-10"
-                onClick={(e) => handleDeletePhoto(photo, e)}
+                onClick={(e) => showDeleteConfirmation(photo, e)}
                 disabled={isDeleting}
                 title="Delete photo"
                 aria-label="Delete photo"
@@ -164,7 +177,7 @@ export default function PhotoGallery({ photos, eventId, onPhotoDeleted }: PhotoG
             
             {/* Delete button in modal */}
             <button 
-              onClick={(e) => handleDeletePhoto(selectedPhoto, e)}
+              onClick={(e) => showDeleteConfirmation(selectedPhoto, e)}
               disabled={isDeleting}
               className="absolute top-2 left-2 bg-red-600 text-white rounded-full p-2 z-10 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Delete photo"
@@ -198,6 +211,18 @@ export default function PhotoGallery({ photos, eventId, onPhotoDeleted }: PhotoG
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Delete Photo"
+        message="Are you sure you want to delete this photo? This action cannot be undone."
+        confirmText="Delete Photo"
+        cancelText="Cancel"
+        onConfirm={handleDeletePhoto}
+        onCancel={closeDeleteConfirmation}
+        isProcessing={isDeleting}
+      />
     </>
   );
 } 

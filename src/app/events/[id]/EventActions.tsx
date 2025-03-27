@@ -1,64 +1,62 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth, useUser } from '@clerk/nextjs';
-import { deleteEventById } from '../../lib/events';
+import React, { useState } from 'react';
+import { FaTrash, FaEdit } from "react-icons/fa";
+import { deleteEventById } from '@/app/lib/events';
+import toast from 'react-hot-toast';
+import ConfirmModal from '@/app/components/ConfirmModal';
+
+interface EventActionsProps {
+  eventId: string;
+  eventName: string;
+  isOwner?: boolean;
+  isAdmin?: boolean;
+}
 
 export default function EventActions({ 
   eventId, 
-  eventName,
-  isAdmin = false,
-  isOwner = false
-}: { 
-  eventId: string;
-  eventName: string;
-  isAdmin?: boolean;
-  isOwner?: boolean;
-}) {
+  eventName, 
+  isOwner = false, 
+  isAdmin = false 
+}: EventActionsProps) {
   const router = useRouter();
-  const { isSignedIn, userId } = useAuth();
-  const { user } = useUser();
-  
-  // UI state
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [error, setError] = useState('');
-  
-  // Handle delete event
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const handleDeleteEvent = async () => {
-    // Determine message based on user role
-    const confirmMessage = isAdmin && !isOwner
-      ? `As an admin, you are about to delete the event "${eventName}" created by another user. This action cannot be undone.`
-      : `Are you sure you want to delete the event "${eventName}"? This action cannot be undone.`;
-    
-    // Prompt the user for confirmation
-    const confirmDelete = window.confirm(confirmMessage);
-    
-    if (confirmDelete) {
-      setIsDeleting(true);
-      setError('');
-      
-      try {
-        // Call the server action to delete the event with user context
-        // We pass isOwner as true since we're already checking that on the server side
-        // and the database user ID is handled there too
-        const success = await deleteEventById(eventId, undefined, isAdmin);
-        
-        if (success) {
-          // Redirect to the events list
-          router.push('/events');
-          router.refresh();
-        } else {
-          setError('Failed to delete event. Please try again.');
-          setIsDeleting(false);
-        }
-      } catch (error: any) {
-        console.error(`Error deleting event with ID: ${eventId}`, error);
-        setError(error.message || 'An unexpected error occurred. Please try again.');
-        setIsDeleting(false);
+    setIsProcessing(true);
+    try {
+      const success = await deleteEventById(eventId, undefined, isAdmin);
+      if (success) {
+        toast.success('Event deleted successfully');
+        router.push('/events');
+        router.refresh();
+      } else {
+        toast.error('Failed to delete event');
       }
+    } catch (error: any) {
+      console.error('Error deleting event:', error);
+      toast.error(error.message || 'An unexpected error occurred');
+    } finally {
+      setIsProcessing(false);
+      setShowDeleteModal(false);
     }
+  };
+
+  const openDeleteConfirmation = () => {
+    setShowDeleteModal(true);
+  };
+
+  const closeDeleteConfirmation = () => {
+    setShowDeleteModal(false);
+  };
+
+  const getConfirmMessage = () => {
+    if (isAdmin && !isOwner) {
+      return `You are about to delete the event "${eventName}" as an administrator. This action cannot be undone.`;
+    }
+    return `Are you sure you want to delete "${eventName}"? This action cannot be undone.`;
   };
 
   // Only render the action buttons if the user is either admin or the owner
@@ -67,37 +65,34 @@ export default function EventActions({
   }
 
   return (
-    <>
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 p-3 rounded-md mb-4">
-          {error}
-          <button 
-            onClick={() => setError('')}
-            className="ml-2 text-red-600 hover:text-red-800"
-          >
-            Dismiss
-          </button>
-        </div>
+    <div className="flex gap-2 mt-4">
+      {isOwner && (
+        <button
+          onClick={() => router.push(`/events/${eventId}/edit`)}
+          className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          <FaEdit className="mr-2" /> Edit Event
+        </button>
       )}
       
-      <div className="flex gap-3">
-        {/* Only show Edit if user is the owner */}
-        {isOwner && (
-          <Link 
-            href={`/events/${eventId}/edit`}
-            className="bg-white text-rose-600 px-5 py-2 rounded-full hover:bg-gray-100 transition-colors shadow-sm text-sm font-medium border border-rose-200"
-          >
-            Edit Event
-          </Link>
-        )}
-        <button 
-          onClick={handleDeleteEvent}
-          disabled={isDeleting}
-          className="bg-red-600 text-white px-5 py-2 rounded-full hover:bg-red-700 transition-colors shadow-sm text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isDeleting ? 'Deleting...' : isAdmin && !isOwner ? 'Delete as Admin' : 'Delete Event'}
-        </button>
-      </div>
-    </>
+      <button
+        onClick={openDeleteConfirmation}
+        className="flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+        disabled={isProcessing}
+      >
+        <FaTrash className="mr-2" /> {isAdmin && !isOwner ? 'Delete as Admin' : 'Delete Event'}
+      </button>
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title="Delete Event"
+        message={getConfirmMessage()}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteEvent}
+        onCancel={closeDeleteConfirmation}
+        isProcessing={isProcessing}
+      />
+    </div>
   );
 } 

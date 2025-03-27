@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from '@clerk/nextjs';
 import AuthNav from "./components/AuthNav";
+import { Toaster } from 'react-hot-toast';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,10 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap" />
       </head>
-      <ClerkProvider>
+      <ClerkProvider
+        publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+        signInFallbackRedirectUrl="/"
+      >
         <body
           className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen text-gray-800`}
           style={{
@@ -42,6 +46,23 @@ export default function RootLayout({
           <main>
             {children}
           </main>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              success: {
+                style: {
+                  background: '#10B981',
+                  color: '#fff',
+                },
+              },
+              error: {
+                style: {
+                  background: '#EF4444',
+                  color: '#fff',
+                },
+              },
+            }}
+          />
           <footer className="bg-slate-900 text-white pt-16 pb-8">
             <div className="container mx-auto px-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
