@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import toast from 'react-hot-toast';
 
 interface UploadPhotoProps {
   eventId: string;
@@ -12,49 +13,27 @@ export default function UploadPhoto({ eventId, onPhotoUploaded }: UploadPhotoPro
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [totalFiles, setTotalFiles] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [debug, setDebug] = useState<string[]>([]);
-  const [fileList, setFileList] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const addDebug = (message: string) => {
-    setDebug(prev => [...prev, `${new Date().toISOString().substring(11, 19)}: ${message}`]);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Reset messages when files are selected
-    setError(null);
-    setSuccessMessage(null);
-    
-    // Get file list and display selected files
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      const fileNames = Array.from(files).map(file => file.name);
-      setFileList(fileNames);
-      addDebug(`Selected ${files.length} file(s): ${fileNames.join(', ')}`);
-    } else {
-      setFileList([]);
+    if (!files || files.length === 0) return;
+    
+    // Start upload immediately
+    await uploadFiles(files);
+    
+    // Reset the file input to allow selecting the same files again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
-
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
-    const files = fileInput?.files;
-    
-    if (!files || files.length === 0) {
-      setError('Please select at least one file to upload');
-      return;
-    }
-    
-    addDebug(`Starting upload for event: ${eventId}`);
-    
+  
+  const uploadFiles = async (files: FileList) => {
     setIsUploading(true);
-    setError(null);
-    setSuccessMessage(null);
     setTotalFiles(files.length);
     setCurrentFileIndex(0);
+    
+    toast.loading(`Uploading ${files.length} photo${files.length > 1 ? 's' : ''}...`, { id: 'upload-toast' });
     
     const uploadedFiles = [];
     
@@ -68,8 +47,7 @@ export default function UploadPhoto({ eventId, onPhotoUploaded }: UploadPhotoPro
         const formData = new FormData();
         formData.append('file', file);
         
-        addDebug(`Preparing to upload file ${i + 1}/${files.length}: ${file.name}`);
-        setUploadProgress(10);
+        setUploadProgress(20);
         
         // Upload to our API endpoint
         const response = await fetch(`/api/events/${eventId}/photos`, {
@@ -77,28 +55,22 @@ export default function UploadPhoto({ eventId, onPhotoUploaded }: UploadPhotoPro
           body: formData,
         });
         
-        addDebug(`Response status for ${file.name}: ${response.status}`);
         setUploadProgress(90);
         
         if (!response.ok) {
           // Try to get error details from the response
           const errorData = await response.json().catch(() => null);
           const errorMessage = errorData?.error || `Upload failed with status ${response.status}`;
-          setError(`Error uploading ${file.name}: ${errorMessage}`);
-          addDebug(`Error with ${file.name}: ${errorMessage}`);
+          toast.error(`Error uploading ${file.name}: ${errorMessage}`, { id: 'upload-toast' });
           continue; // Try next file
         }
         
         const result = await response.json();
         uploadedFiles.push(result);
-        
-        // Success for this file!
-        addDebug(`Upload successful for ${file.name}!`);
         setUploadProgress(100);
         
       } catch (err: any) {
-        setError(`Failed to upload ${file.name}: ${err.message || 'Unknown error'}`);
-        addDebug(`Caught error with ${file.name}: ${err.message}`);
+        toast.error(`Failed to upload ${file.name}: ${err.message || 'Unknown error'}`, { id: 'upload-toast' });
       }
     }
     
@@ -107,16 +79,12 @@ export default function UploadPhoto({ eventId, onPhotoUploaded }: UploadPhotoPro
     
     // Display success message based on results
     if (uploadedFiles.length === files.length) {
-      setSuccessMessage(`All ${files.length} photos uploaded successfully!`);
+      toast.success(`All ${files.length} photos uploaded successfully!`, { id: 'upload-toast' });
     } else if (uploadedFiles.length > 0) {
-      setSuccessMessage(`${uploadedFiles.length} of ${files.length} photos uploaded successfully.`);
+      toast.success(`${uploadedFiles.length} of ${files.length} photos uploaded successfully.`, { id: 'upload-toast' });
     } else {
-      setError('Failed to upload any photos. Please try again.');
+      toast.error('Failed to upload any photos. Please try again.', { id: 'upload-toast' });
     }
-    
-    // Reset form
-    fileInput.value = '';
-    setFileList([]);
     
     // Notify parent component to refresh the gallery
     onPhotoUploaded();
@@ -131,63 +99,46 @@ export default function UploadPhoto({ eventId, onPhotoUploaded }: UploadPhotoPro
 
   return (
     <div className="mb-8">
-      <form onSubmit={handleUpload} className="space-y-4">
-        <div className="flex flex-col md:flex-row items-start gap-3">
+      <div className="relative">
+        <label 
+          htmlFor="photo-upload" 
+          className={`flex items-center justify-center w-full px-6 py-4 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <div className="flex flex-col items-center">
+            <svg className="w-8 h-8 mb-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <p className="text-sm text-gray-700 font-medium">
+              {isUploading ? getProgressLabel() : "Click to select photos to upload"}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Photos will be uploaded automatically
+            </p>
+          </div>
           <input
+            ref={fileInputRef}
             id="photo-upload"
             type="file"
             accept="image/*"
             multiple
             onChange={handleFileChange}
             disabled={isUploading}
-            className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:border-0 file:rounded-md file:text-sm file:font-medium file:bg-rose-50 file:text-rose-600 hover:file:bg-rose-100 disabled:opacity-50"
+            className="hidden"
           />
-          <button
-            type="submit"
-            disabled={isUploading || fileList.length === 0}
-            className="px-6 py-2 bg-rose-600 text-white rounded-full hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isUploading ? getProgressLabel() : 'Upload Photos'}
-          </button>
-        </div>
+        </label>
         
-        {fileList.length > 0 && (
-          <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md">
-            <div className="text-sm font-medium text-gray-700 mb-1">Selected files:</div>
-            <ul className="text-xs text-gray-600 space-y-1">
-              {fileList.map((name, i) => (
-                <li key={i} className="flex items-center">
-                  <svg className="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-4.5-8.599A5.5 5.5 0 003 15z"></path>
-                  </svg>
-                  {name}
-                </li>
-              ))}
-            </ul>
+        {/* Progress bar */}
+        {isUploading && (
+          <div className="w-full mt-2">
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="bg-rose-600 h-full transition-all duration-300 ease-in-out"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
           </div>
         )}
-        
-        {successMessage && (
-          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md text-green-800 text-sm">
-            {successMessage}
-          </div>
-        )}
-        
-        {error && (
-          <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md text-red-800 text-sm">
-            Error: {error}
-          </div>
-        )}
-        
-        {debug.length > 0 && (
-          <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md text-xs font-mono">
-            <div className="text-gray-500 mb-1">Debug info:</div>
-            {debug.map((msg, i) => (
-              <div key={i} className="text-gray-700">{msg}</div>
-            ))}
-          </div>
-        )}
-      </form>
+      </div>
     </div>
   );
 } 

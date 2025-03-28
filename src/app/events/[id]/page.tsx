@@ -1,13 +1,13 @@
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import Image from 'next/image';
 import { getEventById } from '../../lib/events';
 import { auth } from '@clerk/nextjs/server';
 import { getCurrentUserId } from '../../lib/user';
-import EventActions from './EventActions';
 import EventQRCode from './EventQRCode';
 import PhotoManager from './PhotoManager';
+import EventBanner from './EventBanner';
+import DeleteButton from './DeleteButton';
 
 interface PageParams {
   params: { id: string };
@@ -26,8 +26,9 @@ export default async function EventPage({ params }: PageParams) {
   const dbUserId = await getCurrentUserId();
 
   try {
-    // Access the event ID directly from params (it's not a Promise in Next.js 15)
-    const eventId = params.id;
+    // Extract event ID - properly awaiting params as required by Next.js
+    const eventId = await Promise.resolve(params.id);
+    console.log('Event ID:', eventId);
     
     // Get event details
     const event = await getEventById(eventId);
@@ -35,6 +36,11 @@ export default async function EventPage({ params }: PageParams) {
     // If event not found, show 404
     if (!event) {
       notFound();
+    }
+
+    // For debugging, log the banner URL
+    if (event.bannerUrl) {
+      console.log('Found event with banner URL:', event.bannerUrl);
     }
 
     // For now, hardcode isAdmin to false until we implement admin roles with Clerk
@@ -52,24 +58,6 @@ export default async function EventPage({ params }: PageParams) {
       // We can just redirect to the verification page which will handle the checks
       redirect(`/events/${eventId}/verify`);
     }
-
-    // Format the date for display
-    const formatDate = (dateString: string) => {
-      const options: Intl.DateTimeFormatOptions = { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      };
-      return new Date(dateString).toLocaleDateString(undefined, options);
-    };
-
-    // Generate a gradient background based on event name
-    const getGradient = (name: string) => {
-      // Simple hash function to generate consistent colors for the same event name
-      const hash = Array.from(name).reduce((acc, char) => char.charCodeAt(0) + acc, 0);
-      const hue = hash % 360;
-      return `linear-gradient(135deg, hsl(${hue}, 80%, 50%), hsl(${(hue + 60) % 360}, 80%, 60%))`;
-    };
 
     // Calculate if user can manage the event (admin or host)
     const canManageEvent = isAdmin || isHost;
@@ -90,55 +78,15 @@ export default async function EventPage({ params }: PageParams) {
               </Link>
 
               <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                <div className="h-48 relative">
-                  {event.bannerUrl ? (
-                    <Image 
-                      src={event.bannerUrl}
-                      alt={`${event.name} banner`}
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                  ) : (
-                    <div style={{ background: getGradient(event.name) }} className="w-full h-full"></div>
-                  )}
-                  <div className="absolute inset-0 bg-black bg-opacity-20"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-8">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                      <div>
-                        <h1 className="text-4xl font-bold text-white mb-3 drop-shadow-sm">{event.name}</h1>
-                        <div className="flex items-center text-white">
-                          <svg 
-                            className="w-5 h-5 mr-2" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24" 
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path 
-                              strokeLinecap="round" 
-                              strokeLinejoin="round" 
-                              strokeWidth="2" 
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                          <span className="drop-shadow-sm">{formatDate(event.date)}</span>
-                        </div>
-                      </div>
-                      
-                      {canManageEvent && (
-                        <div className="z-10">
-                          <EventActions 
-                            eventId={event.id} 
-                            eventName={event.name} 
-                            isAdmin={isAdmin} 
-                            isOwner={isHost} 
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <EventBanner 
+                  bannerUrl={event.bannerUrl || null}
+                  eventName={event.name}
+                  eventDate={event.date}
+                  canManageEvent={canManageEvent}
+                  isAdmin={isAdmin}
+                  isHost={isHost}
+                  eventId={event.id}
+                />
                 
                 {event.welcomeMessage && (
                   <div className="p-8 border-b border-gray-100">
@@ -177,7 +125,7 @@ export default async function EventPage({ params }: PageParams) {
             <p className="text-gray-700 mb-6">Failed to load event details. Please try again later.</p>
             <Link 
               href="/events" 
-              className="inline-flex items-center justify-center bg-rose-600 hover:bg-rose-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              className="inline-flex items-center justify-center bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-md transition-colors"
             >
               Return to Events
             </Link>

@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import MemorialSlider from "./components/MemorialSlider";
 import { getAllEvents } from "./lib/events";
 import { getCurrentUserId } from "./lib/user";
@@ -227,36 +227,6 @@ export default async function Home() {
                 Get Started
               </Link>
             )}
-          </div>
-        </div>
-      </div>
-
-      {/* Cloudinary Image Test */}
-      <div className="max-w-5xl w-full mt-16">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl font-bold mb-4">Cloudinary Image Test</h2>
-          <p className="mb-4">If you can see the sample images below, Cloudinary is configured correctly:</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="relative h-64 rounded-lg overflow-hidden">
-              <p className="mb-2">Sample Image 1 (Direct Cloudinary URL):</p>
-              <Image 
-                src="https://res.cloudinary.com/dov2iujbo/image/upload/v1716932399/event_banners/y7m1w2blwxovb2jipvl3.jpg" 
-                alt="Sample 1" 
-                fill 
-                className="object-cover" 
-              />
-            </div>
-            
-            <div className="relative h-64 rounded-lg overflow-hidden">
-              <p className="mb-2">Sample Image 2 (Direct Cloudinary URL):</p>
-              <Image 
-                src="https://res.cloudinary.com/dov2iujbo/image/upload/v1716932499/event_banners/ffxn5pgtkiuocidq5u0w.jpg" 
-                alt="Sample 2" 
-                fill 
-                className="object-cover" 
-              />
-            </div>
           </div>
         </div>
       </div>

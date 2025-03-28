@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Get the ID parameter
-    const id = await params.id;
+    // Get the ID parameter using String conversion
+    const id = String(params.id);
     
     if (!id) {
       return NextResponse.json(

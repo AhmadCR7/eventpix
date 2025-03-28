@@ -11,13 +11,14 @@ import { useAuth } from '@clerk/nextjs';
 import toast from 'react-hot-toast';
 
 interface PageParams {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
-export default function EditEventPage({ params }: PageParams) {
+export default function EditEventPage() {
   const { isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
-  const { id: eventId } = React.use(params);
+  const params = useParams();
+  const eventId = String(params.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [eventData, setEventData] = useState({
@@ -203,15 +204,19 @@ export default function EditEventPage({ params }: PageParams) {
       formData.append('upload_preset', uploadPreset);
       
       // Add timestamp and organize in event_banners folder
-      formData.append('timestamp', String(Math.round(new Date().getTime() / 1000)));
+      const timestamp = String(Math.round(new Date().getTime() / 1000));
+      formData.append('timestamp', timestamp);
       formData.append('folder', 'event_banners');
       
       // Get cloudinary cloud name from env or use fallback
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dov2iujbo';
       
-      console.log(`Uploading to Cloudinary (${cloudName}) with preset: ${uploadPreset}...`);
-      console.log('Upload file name:', imageFile.name);
-      console.log('Upload file size:', imageFile.size);
+      console.log(`Uploading to Cloudinary (${cloudName}) with preset: ${uploadPreset}, timestamp: ${timestamp}, file: ${imageFile.name}`);
+      
+      // For debugging, list all form data entries
+      for (const pair of formData.entries()) {
+        console.log(`Form data: ${pair[0]}: ${pair[1]}`);
+      }
       
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: 'POST',
@@ -235,8 +240,24 @@ export default function EditEventPage({ params }: PageParams) {
       console.log('Cloudinary upload successful, full response:', data);
       console.log('Image URL:', data.secure_url);
       console.log('Public ID:', data.public_id);
+      
+      // Ensure the URL is returned exactly as received
+      const finalUrl = data.secure_url;
+      
+      // Test the URL with a fetch to make sure it's accessible
+      try {
+        const testResponse = await fetch(finalUrl, { method: 'HEAD' });
+        if (testResponse.ok) {
+          console.log('URL is accessible:', finalUrl);
+        } else {
+          console.error('URL returns error status:', testResponse.status);
+        }
+      } catch (testError) {
+        console.error('Error testing URL accessibility:', testError);
+      }
+      
       toast.success('Banner uploaded successfully', { id: 'upload-banner' });
-      return data.secure_url;
+      return finalUrl;
     } catch (error) {
       console.error('Error uploading banner:', error);
       toast.error('Failed to upload banner image. Check your Cloudinary configuration.', { id: 'upload-banner' });
@@ -525,7 +546,13 @@ export default function EditEventPage({ params }: PageParams) {
                 name="date"
                 value={eventData.date}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-md border border-gray-300 focus:border-rose-500 focus:ring focus:ring-rose-200 focus:ring-opacity-50"
+                className="w-full px-4 py-3 rounded-md border border-gray-300 focus:border-rose-500 focus:ring focus:ring-rose-200 focus:ring-opacity-50 cursor-pointer"
+                style={{
+                  backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg>')",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                  paddingRight: "40px"
+                }}
               />
             </div>
             

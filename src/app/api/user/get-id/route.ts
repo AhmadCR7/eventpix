@@ -1,29 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../../lib/prisma';
+import { auth } from '@clerk/nextjs/server';
+import { getCurrentUserId } from '../../../lib/user';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // Get the email from the query params
-    const { searchParams } = new URL(request.url);
-    const email = searchParams.get('email');
-
-    // Validate input
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    // Get clerk user information
+    const { userId: clerkUserId } = await auth();
+    
+    if (!clerkUserId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    // Find the user by email
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true }
-    });
-
-    if (!user) {
+    
+    // Get the database user ID using the utility function
+    const dbUserId = await getCurrentUserId();
+    
+    if (!dbUserId) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Return the user ID
-    return NextResponse.json({ userId: user.id });
+    return NextResponse.json({ userId: dbUserId });
   } catch (error) {
     console.error('Error fetching user ID:', error);
     return NextResponse.json(

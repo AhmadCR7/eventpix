@@ -7,6 +7,8 @@ import { getAllEvents } from '../lib/events';
 
 // Enhanced Event Card component with better styling
 function EventCard({ event }: { event: any }) {
+  console.log('Rendering EventCard for event:', event.name, 'Banner URL:', event.bannerUrl);
+  
   // Format the date for display
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -31,26 +33,27 @@ function EventCard({ event }: { event: any }) {
     const hue = hash % 360;
     return `linear-gradient(135deg, hsl(${hue}, 80%, 50%), hsl(${(hue + 60) % 360}, 80%, 60%))`;
   };
+  
+  // Direct image URL approach for better compatibility
+  const bannerStyle = event.bannerUrl ? {
+    backgroundImage: `url('${event.bannerUrl}')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundRepeat: 'no-repeat'
+  } : {
+    background: getGradient(event.name)
+  };
 
   return (
     <Link key={event.id} href={`/events/${event.id}`}>
       <div className="group bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all h-full flex flex-col transform hover:-translate-y-1">
-        <div className="relative h-40">
-          {event.bannerUrl ? (
-            <Image 
-              src={event.bannerUrl}
-              alt={`${event.name} banner`}
-              fill
-              className="object-cover"
-              priority
-            />
-          ) : (
-            <div className="absolute inset-0" style={{ background: getGradient(event.name) }}></div>
-          )}
-          <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-10 transition-all"></div>
-          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-            <h2 className="font-bold text-2xl mb-1 drop-shadow-sm truncate">{event.name}</h2>
-            <div className="flex items-center text-white text-sm drop-shadow-sm">
+        <div className="relative h-40" style={bannerStyle}>
+          {/* Add an additional dark overlay for better visibility */}
+          <div className="absolute inset-0 bg-black opacity-40 group-hover:opacity-30 transition-all"></div>
+          
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
+            <h2 className="font-bold text-2xl mb-1 drop-shadow-lg truncate">{event.name}</h2>
+            <div className="flex items-center text-white text-sm drop-shadow-md">
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>

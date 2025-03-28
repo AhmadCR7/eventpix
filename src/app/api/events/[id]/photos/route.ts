@@ -138,8 +138,7 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const id = await params.id;
-  const eventId = id;
+  const eventId = String(params.id);
   
   try {
     if (!eventId) {

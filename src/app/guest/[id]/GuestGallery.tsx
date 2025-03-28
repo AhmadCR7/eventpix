@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Photo } from '../../lib/events';
+import OptimizedImage from '@/app/components/OptimizedImage';
 
 interface GuestGalleryProps {
   photos: Photo[];
@@ -60,10 +61,11 @@ export default function GuestGallery({ photos, eventId }: GuestGalleryProps) {
               className="relative h-36 sm:h-40 w-full cursor-pointer" 
               onClick={() => openPhotoModal(photo)}
             >
-              <img 
+              <OptimizedImage 
                 src={photo.url} 
                 alt={`Event photo ${photo.id}`}
-                className="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                fill
+                className="object-cover hover:opacity-90 transition-opacity"
               />
             </div>
             {photo.uploaderName && (
@@ -92,12 +94,15 @@ export default function GuestGallery({ photos, eventId }: GuestGalleryProps) {
             </button>
             
             {/* Image container */}
-            <div className="bg-white rounded-lg overflow-hidden shadow-xl max-h-[80vh]">
-              <img 
-                src={selectedPhoto.url} 
-                alt={`Event photo ${selectedPhoto.id}`}
-                className="w-full h-auto max-h-[80vh] object-contain"
-              />
+            <div className="bg-white rounded-lg overflow-hidden shadow-xl max-h-[80vh] relative">
+              <div className="w-full h-[80vh] relative">
+                <OptimizedImage 
+                  src={selectedPhoto.url} 
+                  alt={`Event photo ${selectedPhoto.id}`}
+                  fill
+                  className="object-contain"
+                />
+              </div>
             </div>
             
             {/* Image metadata */}

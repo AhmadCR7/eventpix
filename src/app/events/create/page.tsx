@@ -247,15 +247,19 @@ export default function CreateEvent() {
       formData.append('upload_preset', uploadPreset);
       
       // Add timestamp and organize in event_banners folder
-      formData.append('timestamp', String(Math.round(new Date().getTime() / 1000)));
+      const timestamp = String(Math.round(new Date().getTime() / 1000));
+      formData.append('timestamp', timestamp);
       formData.append('folder', 'event_banners');
       
       // Get cloudinary cloud name from env or use fallback
       const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'dov2iujbo';
       
-      console.log(`Uploading to Cloudinary (${cloudName}) with preset: ${uploadPreset}...`);
-      console.log('Upload file name:', imageFile.name);
-      console.log('Upload file size:', imageFile.size);
+      console.log(`Uploading to Cloudinary (${cloudName}) with preset: ${uploadPreset}, timestamp: ${timestamp}, file: ${imageFile.name}`);
+      
+      // For debugging, list all form data entries
+      for (const pair of formData.entries()) {
+        console.log(`Form data: ${pair[0]}: ${pair[1]}`);
+      }
       
       const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
         method: 'POST',
@@ -279,8 +283,24 @@ export default function CreateEvent() {
       console.log('Cloudinary upload successful, full response:', data);
       console.log('Image URL:', data.secure_url);
       console.log('Public ID:', data.public_id);
+      
+      // Ensure the URL is returned exactly as received
+      const finalUrl = data.secure_url;
+      
+      // Test the URL with a fetch to make sure it's accessible
+      try {
+        const testResponse = await fetch(finalUrl, { method: 'HEAD' });
+        if (testResponse.ok) {
+          console.log('URL is accessible:', finalUrl);
+        } else {
+          console.error('URL returns error status:', testResponse.status);
+        }
+      } catch (testError) {
+        console.error('Error testing URL accessibility:', testError);
+      }
+      
       toast.success('Banner image uploaded successfully!');
-      return data.secure_url;
+      return finalUrl;
     } catch (error) {
       console.error('Error uploading banner:', error);
       toast.error('Failed to upload banner image. Check your Cloudinary configuration.');
@@ -309,6 +329,7 @@ export default function CreateEvent() {
         let bannerUrl = null;
         if (finalBannerImage) {
           bannerUrl = await uploadBannerToCloudinary(finalBannerImage);
+          console.log('Banner URL to be saved to database:', bannerUrl);
         }
         
         // Create the event with the user ID from the database and banner URL
@@ -322,6 +343,8 @@ export default function CreateEvent() {
           userId: dbUserId, // Associate the event with the database user ID
           bannerUrl: bannerUrl, // Add the banner URL
         });
+        
+        console.log('Event created with ID:', newEvent.id, 'and banner URL:', newEvent.bannerUrl);
         
         // Reset the form
         setEventName('');
@@ -550,7 +573,13 @@ export default function CreateEvent() {
                   name="date"
                   value={eventDate}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-rose-500 focus:border-rose-500 cursor-pointer"
+                  style={{
+                    backgroundImage: "url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" y1=\"2\" x2=\"16\" y2=\"6\"></line><line x1=\"8\" y1=\"2\" x2=\"8\" y2=\"6\"></line><line x1=\"3\" y1=\"10\" x2=\"21\" y2=\"10\"></line></svg>')",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "right 10px center",
+                    paddingRight: "40px"
+                  }}
                 />
                 {errors.date && (
                   <p className="text-red-500 text-sm mt-1">{errors.date}</p>

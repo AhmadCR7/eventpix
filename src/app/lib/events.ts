@@ -134,25 +134,46 @@ export async function deleteEventById(id: string | number, userId?: string, isAd
   const stringId = id.toString();
   
   try {
-    // If userId is provided and user is not admin, ensure they own the event
-    if (userId && !isAdmin) {
-      const event = await prisma.event.findUnique({
-        where: { id: stringId },
-      });
-      
-      // If event doesn't exist or doesn't belong to user, refuse deletion
-      if (!event || event.userId !== userId) {
-        console.error('Unauthorized attempt to delete event:', { eventId: stringId, requestedBy: userId });
-        return false;
-      }
-    }
+    console.log('Attempting to delete event:', { eventId: stringId, userId, isAdmin });
     
-    // Proceed with deletion (user is authorized)
-    await prisma.event.delete({
+    // First, try to find the event to confirm it exists
+    const event = await prisma.event.findUnique({
       where: { id: stringId },
     });
     
-    return true;
+    // If event doesn't exist, return false
+    if (!event) {
+      console.error('Event not found for deletion:', { eventId: stringId });
+      return false;
+    }
+    
+    // If userId is provided and user is not admin, ensure they own the event
+    if (userId && !isAdmin && event.userId !== userId) {
+      console.error('Unauthorized attempt to delete event:', { eventId: stringId, requestedBy: userId, eventOwnerId: event.userId });
+      return false;
+    }
+    
+    console.log('Authorized to delete event, proceeding with deletion');
+    
+    try {
+      // Delete related photos first (to avoid foreign key constraints)
+      await prisma.photo.deleteMany({
+        where: { eventId: stringId },
+      });
+      
+      console.log('Successfully deleted all photos for event:', stringId);
+      
+      // Now delete the event
+      await prisma.event.delete({
+        where: { id: stringId },
+      });
+      
+      console.log('Event deleted successfully:', { eventId: stringId });
+      return true;
+    } catch (dbError) {
+      console.error('Database error during event deletion:', dbError);
+      return false;
+    }
   } catch (error) {
     console.error('Error deleting event:', error);
     return false;

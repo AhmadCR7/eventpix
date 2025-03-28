@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
-import prisma from '../../../../../lib/prisma';
+import prisma from '@/app/lib/prisma';
 
 // Configure Cloudinary with credentials
 cloudinary.config({
@@ -9,17 +9,43 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET || 'gGk80RJ-RBUNXRwRFy3dJRjjtUE'
 });
 
-// Handle DELETE request to remove a photo
+// Handle POST requests for form-based deletion (with _method=DELETE)
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string; photoId: string } }
+) {
+  // Check for method override
+  try {
+    const formData = await req.formData();
+    const methodOverride = formData.get('_method');
+    
+    if (methodOverride === 'DELETE') {
+      return await handlePhotoDelete(params.id, params.photoId, req);
+    }
+    
+    return NextResponse.json({ error: 'Invalid method override' }, { status: 400 });
+  } catch (error) {
+    console.error('Error processing POST request:', error);
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
+  }
+}
+
+// Handle direct DELETE requests
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string; photoId: string } }
 ) {
-  try {
-    // Get the parameters
-    const id = await params.id;
-    const photoId = await params.photoId;
+  return await handlePhotoDelete(params.id, params.photoId, req);
+}
 
-    if (!id || !photoId) {
+// Common function to handle photo deletion
+async function handlePhotoDelete(eventId: string, photoId: string, req: NextRequest) {
+  console.log(`Deleting photo ${photoId} from event ${eventId}`);
+  
+  try {
+    // Validate parameters
+    if (!eventId || !photoId) {
+      console.error('Missing parameters:', { eventId, photoId });
       return NextResponse.json(
         { error: 'Event ID and Photo ID are required' },
         { status: 400 }
@@ -33,6 +59,7 @@ export async function DELETE(
 
     // Check if photo exists
     if (!photo) {
+      console.error('Photo not found:', photoId);
       return NextResponse.json(
         { error: 'Photo not found' },
         { status: 404 }
@@ -40,7 +67,8 @@ export async function DELETE(
     }
 
     // Check if photo belongs to the given event
-    if (photo.eventId !== id) {
+    if (photo.eventId !== eventId) {
+      console.error('Photo does not belong to event:', { photoEventId: photo.eventId, requestedEventId: eventId });
       return NextResponse.json(
         { error: 'Photo does not belong to this event' },
         { status: 403 }
@@ -51,32 +79,32 @@ export async function DELETE(
     if (photo.publicId) {
       try {
         console.log(`Deleting photo from Cloudinary with publicId: ${photo.publicId}`);
-        
-        // Delete the photo from Cloudinary
-        const result = await cloudinary.uploader.destroy(photo.publicId);
-        
-        console.log('Cloudinary delete result:', result);
-        
-        // Check if deletion was successful
-        if (result.result !== 'ok') {
-          console.warn(`Warning: Cloudinary deletion returned status ${result.result}`);
-        }
-      } catch (cloudinaryError: any) {
+        await cloudinary.uploader.destroy(photo.publicId);
+        console.log('Photo deleted from Cloudinary');
+      } catch (cloudinaryError) {
         // Log error but continue with database deletion
-        console.error('Error deleting from Cloudinary:', cloudinaryError.message);
+        console.error('Error deleting from Cloudinary:', cloudinaryError);
       }
-    } else {
-      console.warn('No publicId found for photo, skipping Cloudinary deletion');
     }
 
     // Delete photo record from database
     await prisma.photo.delete({
       where: { id: photoId },
     });
+    console.log('Photo deleted from database successfully');
 
+    // Support both form-based and API requests
+    const acceptHeader = req.headers.get('accept');
+    if (acceptHeader && acceptHeader.includes('text/html')) {
+      // For form submissions, redirect back to the event page
+      return NextResponse.redirect(new URL(`/events/${eventId}`, req.url));
+    }
+
+    // For API requests, return a JSON response
     return NextResponse.json({ 
       success: true,
-      message: 'Photo deleted successfully'
+      message: 'Photo deleted successfully',
+      photoId: photoId
     });
   } catch (error: any) {
     console.error('Error deleting photo:', error);

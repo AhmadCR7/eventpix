@@ -11,7 +11,9 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isProcessing?: boolean;
+  isLoading?: boolean;
   confirmButtonClass?: string;
+  cancelButtonClass?: string;
 }
 
 export default function ConfirmModal({
@@ -23,9 +25,14 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
   isProcessing = false,
-  confirmButtonClass = 'bg-red-600 hover:bg-red-700'
+  isLoading,
+  confirmButtonClass = 'bg-red-600 hover:bg-red-700',
+  cancelButtonClass = 'bg-white text-gray-700 hover:bg-gray-50'
 }: ConfirmModalProps) {
   if (!isOpen) return null;
+  
+  // Handle both isProcessing and isLoading for backward compatibility
+  const isProcessingState = isLoading !== undefined ? isLoading : isProcessing;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -57,17 +64,17 @@ export default function ConfirmModal({
           <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
             <button
               type="button"
-              className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${confirmButtonClass} ${isProcessing ? 'opacity-75 cursor-not-allowed' : ''}`}
+              className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm ${confirmButtonClass} ${isProcessingState ? 'opacity-75 cursor-not-allowed' : ''}`}
               onClick={onConfirm}
-              disabled={isProcessing}
+              disabled={isProcessingState}
             >
-              {isProcessing ? 'Processing...' : confirmText}
+              {isProcessingState ? 'Processing...' : confirmText}
             </button>
             <button
               type="button"
-              className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              className={`mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 ${cancelButtonClass} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm`}
               onClick={onCancel}
-              disabled={isProcessing}
+              disabled={isProcessingState}
             >
               {cancelText}
             </button>
